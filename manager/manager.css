@@ -1,0 +1,13 @@
+body { margin: 0; font: 14px system-ui, sans-serif; color: #222; }
+header { display: flex; gap: 16px; align-items: center; padding: 12px 20px; border-bottom: 1px solid #ddd; }
+header h1 { font-size: 18px; margin: 0; }
+#search { flex: 1; max-width: 480px; padding: 6px 10px; }
+main { display: grid; grid-template-columns: 320px 1fr; gap: 20px; padding: 20px; }
+#suggestions-panel { border-right: 1px solid #eee; padding-right: 20px; }
+ul.children { list-style: none; padding-left: 20px; margin: 0; }
+li.folder > .folder-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-weight: 600; }
+li.bookmark { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+li.bookmark a { color: #1a56b0; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 480px; }
+.sort-select, .move-select { font-size: 12px; }
+.suggestion { border: 1px solid #ddd; border-radius: 6px; padding: 8px; margin: 8px 0; }
+.suggestion button { margin-top: 4px; }
