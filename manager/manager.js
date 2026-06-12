@@ -1,8 +1,10 @@
 import { sortChildren, SORT_MODES } from '../src/sorting.js';
 import { isSafeUrl } from '../src/url-utils.js';
-import { listFolders } from '../src/tree.js';
+import { flattenBookmarks, listFolders } from '../src/tree.js';
+import { searchBookmarks } from '../src/search.js';
 
 const treeEl = document.getElementById('tree');
+const searchEl = document.getElementById('search');
 
 const SORT_LABELS = { alphabetical: 'A–Z', dateAdded: 'Newest first', domain: 'By domain' };
 
@@ -13,6 +15,19 @@ async function refresh() {
   const roots = tree[0].children ?? [];
   for (const root of roots) treeEl.appendChild(renderFolder(root, folders));
 }
+
+searchEl.addEventListener('input', async () => {
+  const query = searchEl.value;
+  if (!query.trim()) { await refresh(); return; }
+  const tree = await chrome.bookmarks.getTree();
+  const matches = searchBookmarks(flattenBookmarks(tree), query);
+  const folders = listFolders(tree);
+  treeEl.replaceChildren();
+  const ul = document.createElement('ul');
+  ul.className = 'children';
+  for (const b of matches) ul.appendChild(renderBookmark(b, folders));
+  treeEl.appendChild(ul);
+});
 
 function renderFolder(folder, allFolders) {
   const li = document.createElement('li');
