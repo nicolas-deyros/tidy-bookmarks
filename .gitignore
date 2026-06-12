@@ -2,3 +2,7 @@ node_modules/
 dist/
 *.zip
 .env
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
