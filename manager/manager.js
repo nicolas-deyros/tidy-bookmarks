@@ -78,6 +78,10 @@ async function refresh() {
   const ids = new Set(listFolders(tree).map(f => f.id));
   if (uiState.selected && !ids.has(uiState.selected)) uiState.selected = '';
   uiState.expanded = new Set([...uiState.expanded].filter(id => ids.has(id)));
+  if (!uiState.selected) {
+    const firstRoot = (tree[0].children ?? [])[0];
+    if (firstRoot) uiState.selected = firstRoot.id;
+  }
   renderRail(railEl, ctx);
   renderContents(contentsEl, ctx);
 }
