@@ -50,3 +50,35 @@ export function countContents(folder) {
   }
   return { bookmarks, folders };
 }
+
+function findNode(nodes, id) {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    if (n.children) {
+      const found = findNode(n.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function subtreeHas(node, id) {
+  if (node.id === id) return true;
+  for (const c of node.children ?? []) {
+    if (subtreeHas(c, id)) return true;
+  }
+  return false;
+}
+
+export function isDescendant(tree, ancestorId, nodeId) {
+  if (ancestorId === nodeId) return true;
+  const ancestor = findNode(tree, ancestorId);
+  return ancestor ? subtreeHas(ancestor, nodeId) : false;
+}
+
+export function dropIndex(orderedIds, draggedId, beforeId) {
+  const without = orderedIds.filter(id => id !== draggedId);
+  if (beforeId == null) return without.length;
+  const idx = without.indexOf(beforeId);
+  return idx === -1 ? without.length : idx;
+}

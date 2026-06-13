@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { flattenBookmarks, listFolders, findEmptyFolders, countContents } from '../src/tree.js';
+import { flattenBookmarks, listFolders, findEmptyFolders, countContents, isDescendant, dropIndex } from '../src/tree.js';
 
 const tree = [{
   id: '0', title: '',
@@ -60,5 +60,47 @@ describe('countContents', () => {
   });
   it('returns zeros for an empty folder', () => {
     expect(countContents({ id: 'e', title: 'Empty', children: [] })).toEqual({ bookmarks: 0, folders: 0 });
+  });
+});
+
+const descTree = [{ id: '0', title: '', children: [
+  { id: '1', title: 'Bar', children: [
+    { id: '10', title: 'Dev', children: [
+      { id: '100', title: 'JS', children: [] }
+    ] },
+    { id: '11', title: 'News', children: [] }
+  ] }
+] }];
+
+describe('isDescendant', () => {
+  it('is true for the same id', () => {
+    expect(isDescendant(descTree, '10', '10')).toBe(true);
+  });
+  it('is true for a direct or deep descendant', () => {
+    expect(isDescendant(descTree, '1', '10')).toBe(true);
+    expect(isDescendant(descTree, '1', '100')).toBe(true);
+  });
+  it('is false for non-descendants', () => {
+    expect(isDescendant(descTree, '10', '11')).toBe(false);
+    expect(isDescendant(descTree, '100', '1')).toBe(false);
+  });
+  it('is false when the ancestor id is unknown', () => {
+    expect(isDescendant(descTree, 'nope', '10')).toBe(false);
+  });
+});
+
+describe('dropIndex', () => {
+  const order = ['a', 'b', 'c', 'd'];
+  it('drops before a middle item', () => {
+    expect(dropIndex(order, 'a', 'c')).toBe(1);
+  });
+  it('drops before the first item', () => {
+    expect(dropIndex(order, 'c', 'a')).toBe(0);
+  });
+  it('drops at the end when beforeId is null', () => {
+    expect(dropIndex(order, 'a', null)).toBe(3);
+  });
+  it('drops at the end when beforeId is unknown', () => {
+    expect(dropIndex(order, 'a', 'zzz')).toBe(3);
   });
 });
