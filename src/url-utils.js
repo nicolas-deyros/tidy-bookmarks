@@ -27,3 +27,8 @@ export function domainOf(url) {
     return '';
   }
 }
+
+export function faviconParams(pageUrl, size = 16) {
+  const params = new URLSearchParams({ pageUrl, size: String(size) });
+  return `/_favicon/?${params.toString()}`;
+}

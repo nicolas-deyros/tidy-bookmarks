@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSafeUrl, normalizeUrl, domainOf } from '../src/url-utils.js';
+import { isSafeUrl, normalizeUrl, domainOf, faviconParams } from '../src/url-utils.js';
 
 describe('isSafeUrl', () => {
   it('accepts http and https', () => {
@@ -33,5 +33,15 @@ describe('domainOf', () => {
   it('returns empty string for invalid input', () => {
     expect(domainOf('nope')).toBe('');
     expect(domainOf(undefined)).toBe('');
+  });
+});
+
+describe('faviconParams', () => {
+  it('builds the _favicon path with pageUrl and size', () => {
+    expect(faviconParams('https://github.com', 16))
+      .toBe('/_favicon/?pageUrl=https%3A%2F%2Fgithub.com&size=16');
+  });
+  it('defaults size to 16', () => {
+    expect(faviconParams('https://a.com')).toContain('size=16');
   });
 });
