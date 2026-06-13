@@ -4,14 +4,33 @@ import { flattenBookmarks, listFolders, findEmptyFolders } from '../src/tree.js'
 import { searchBookmarks } from '../src/search.js';
 import { findDuplicates } from '../src/suggestions.js';
 import { suggestFolder, defaultSessionFactory } from '../src/ai.js';
+import { addTag, removeTag, tagsFor, pruneTags } from '../src/tags.js';
 
 const treeEl = document.getElementById('tree');
 const searchEl = document.getElementById('search');
+
+let tagMap = {};
+
+async function loadTags() {
+  const { tags = {} } = await chrome.storage.local.get('tags');
+  tagMap = tags;
+}
+
+async function saveTags() {
+  await chrome.storage.local.set({ tags: tagMap });
+}
 
 const SORT_LABELS = { alphabetical: 'A–Z', dateAdded: 'Newest first', domain: 'By domain' };
 
 async function refresh() {
   const tree = await chrome.bookmarks.getTree();
+  await loadTags();
+  const flat = flattenBookmarks(tree);
+  const pruned = pruneTags(tagMap, flat.map(b => b.id));
+  if (Object.keys(pruned).length !== Object.keys(tagMap).length) {
+    tagMap = pruned;
+    await saveTags();
+  }
   const folders = listFolders(tree);
   treeEl.replaceChildren();
   const roots = tree[0].children ?? [];
@@ -111,6 +130,37 @@ function renderBookmark(node, allFolders) {
     await refresh();
   });
   li.appendChild(move);
+
+  const tagBar = document.createElement('span');
+  tagBar.className = 'tag-bar';
+  for (const tag of tagsFor(tagMap, node.id)) {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.textContent = tag;
+    const x = document.createElement('button');
+    x.className = 'tag-x';
+    x.textContent = '×';
+    x.title = `Remove tag "${tag}"`;
+    x.addEventListener('click', async () => {
+      tagMap = removeTag(tagMap, node.id, tag);
+      await saveTags();
+      await refresh();
+    });
+    chip.appendChild(x);
+    tagBar.appendChild(chip);
+  }
+  const addTagBtn = document.createElement('button');
+  addTagBtn.className = 'tag-add';
+  addTagBtn.textContent = '+ tag';
+  addTagBtn.addEventListener('click', async () => {
+    const value = window.prompt('Add a tag:');
+    if (!value) return;
+    tagMap = addTag(tagMap, node.id, value);
+    await saveTags();
+    await refresh();
+  });
+  tagBar.appendChild(addTagBtn);
+  li.appendChild(tagBar);
 
   return li;
 }

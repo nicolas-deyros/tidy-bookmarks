@@ -11,3 +11,7 @@ li.bookmark a { color: #1a56b0; text-decoration: none; overflow: hidden; text-ov
 .sort-select, .move-select { font-size: 12px; }
 .suggestion { border: 1px solid #ddd; border-radius: 6px; padding: 8px; margin: 8px 0; }
 .suggestion button { margin-top: 4px; }
+.tag-bar { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-left: 8px; }
+.tag-chip { background: #eef2ff; color: #3349a8; border-radius: 10px; padding: 1px 6px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
+.tag-x { border: none; background: none; color: #3349a8; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+.tag-add { border: 1px dashed #aab; background: none; color: #667; border-radius: 10px; padding: 1px 6px; font-size: 11px; cursor: pointer; }
