@@ -119,3 +119,45 @@ describe('suggestTags', () => {
     expect(await suggestTags({ title: 'X', url: 'https://x.io' }, [], { createSession: null })).toEqual([]);
   });
 });
+
+import { buildReorgPrompt, parseReorg, suggestReorg } from '../src/ai.js';
+
+const reorgBookmarks = [
+  { id: 'b1', title: 'React docs', url: 'https://react.dev' },
+  { id: 'b2', title: 'Pasta recipe', url: 'https://food.com/pasta' },
+  { id: 'b3', title: 'Vue guide', url: 'https://vuejs.org' }
+];
+
+describe('buildReorgPrompt', () => {
+  it('numbers the bookmarks and names the folder', () => {
+    const p = buildReorgPrompt('Misc', reorgBookmarks);
+    expect(p).toContain('Misc');
+    expect(p).toContain('1. React docs');
+    expect(p).toContain('3. Vue guide');
+  });
+});
+
+describe('parseReorg', () => {
+  it('maps line numbers to bookmark ids and sanitizes group names', () => {
+    const groups = parseReorg('Frontend: 1, 3\nFood: 2', reorgBookmarks);
+    expect(groups).toEqual([
+      { name: 'Frontend', bookmarkIds: ['b1', 'b3'] },
+      { name: 'Food', bookmarkIds: ['b2'] }
+    ]);
+  });
+  it('drops out-of-range numbers and unparseable lines', () => {
+    const groups = parseReorg('Junk\nGood: 2, 99', reorgBookmarks);
+    expect(groups).toEqual([{ name: 'Good', bookmarkIds: ['b2'] }]);
+  });
+});
+
+describe('suggestReorg', () => {
+  it('returns parsed groups from the model', async () => {
+    const fakeSession = { prompt: async () => 'Frontend: 1, 3', destroy: () => {} };
+    const groups = await suggestReorg('Misc', reorgBookmarks, { createSession: async () => fakeSession });
+    expect(groups).toEqual([{ name: 'Frontend', bookmarkIds: ['b1', 'b3'] }]);
+  });
+  it('returns [] when no session factory is available', async () => {
+    expect(await suggestReorg('Misc', reorgBookmarks, { createSession: null })).toEqual([]);
+  });
+});

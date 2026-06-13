@@ -118,3 +118,52 @@ export async function suggestTags(bookmark, existingTags, { createSession } = {}
   }
   return [];
 }
+
+export function buildReorgPrompt(folderTitle, bookmarks) {
+  const lines = bookmarks.map((b, i) => `${i + 1}. ${b.title} (${domainOf(b.url)})`).join('\n');
+  return [
+    `Organize the bookmarks in the folder "${folderTitle}" into 2-5 topical subfolders.`,
+    'Bookmarks:',
+    lines,
+    'Reply with one line per subfolder as "Subfolder name: 1, 3, 5" using the numbers above.',
+    'Use only the numbers listed. Nothing else.'
+  ].join('\n');
+}
+
+export function parseReorg(response, bookmarks) {
+  if (typeof response !== 'string') return [];
+  const groups = [];
+  for (const line of response.split('\n')) {
+    const m = line.match(/^\s*(.+?):\s*([\d,\s]+)$/);
+    if (!m) continue;
+    const name = sanitizeFolderName(m[1]);
+    if (!name) continue;
+    const ids = [];
+    for (const part of m[2].split(',')) {
+      const n = Number.parseInt(part.trim(), 10);
+      if (Number.isInteger(n) && n >= 1 && n <= bookmarks.length) {
+        const id = bookmarks[n - 1].id;
+        if (!ids.includes(id)) ids.push(id);
+      }
+    }
+    if (ids.length) groups.push({ name, bookmarkIds: ids });
+  }
+  return groups;
+}
+
+export async function suggestReorg(folderTitle, bookmarks, { createSession } = {}) {
+  if (!createSession) return [];
+  let session = null;
+  try {
+    session = await createSession();
+    if (session) {
+      const response = await session.prompt(buildReorgPrompt(folderTitle, bookmarks));
+      return parseReorg(response, bookmarks);
+    }
+  } catch (err) {
+    console.warn('AI reorg suggestion failed:', err);
+  } finally {
+    try { session?.destroy?.(); } catch { /* ignore a misbehaving session */ }
+  }
+  return [];
+}
