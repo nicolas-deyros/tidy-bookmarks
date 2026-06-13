@@ -5,10 +5,13 @@ import { isSafeUrl, faviconParams } from '../src/url-utils.js';
 const input = document.getElementById('search');
 const results = document.getElementById('results');
 let flat = [];
+let tagMap = {};
 
 async function init() {
   const tree = await chrome.bookmarks.getTree();
   flat = flattenBookmarks(tree);
+  const { tags = {} } = await chrome.storage.local.get('tags');
+  tagMap = tags;
 }
 
 function render(matches) {
@@ -43,7 +46,7 @@ function render(matches) {
   }
 }
 
-input.addEventListener('input', () => render(searchBookmarks(flat, input.value)));
+input.addEventListener('input', () => render(searchBookmarks(flat, input.value, tagMap)));
 
 document.getElementById('open-manager').addEventListener('click', async () => {
   await chrome.tabs.create({ url: chrome.runtime.getURL('manager/manager.html') });
