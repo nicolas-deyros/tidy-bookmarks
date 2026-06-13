@@ -1,17 +1,36 @@
 import { sortChildren, SORT_MODES } from '../src/sorting.js';
-import { isSafeUrl } from '../src/url-utils.js';
+import { isSafeUrl, faviconParams } from '../src/url-utils.js';
 import { flattenBookmarks, listFolders, findEmptyFolders } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
-import { findDuplicates } from '../src/suggestions.js';
-import { suggestFolder, defaultSessionFactory } from '../src/ai.js';
+import { findDuplicates, findMergeableFolders } from '../src/suggestions.js';
+import { suggestFolder, suggestTags, suggestReorg, defaultSessionFactory } from '../src/ai.js';
+import { addTag, removeTag, tagsFor, pruneTags, allTags } from '../src/tags.js';
 
 const treeEl = document.getElementById('tree');
 const searchEl = document.getElementById('search');
+
+let tagMap = {};
+
+async function loadTags() {
+  const { tags = {} } = await chrome.storage.local.get('tags');
+  tagMap = tags;
+}
+
+async function saveTags() {
+  await chrome.storage.local.set({ tags: tagMap });
+}
 
 const SORT_LABELS = { alphabetical: 'A–Z', dateAdded: 'Newest first', domain: 'By domain' };
 
 async function refresh() {
   const tree = await chrome.bookmarks.getTree();
+  await loadTags();
+  const flat = flattenBookmarks(tree);
+  const pruned = pruneTags(tagMap, flat.map(b => b.id));
+  if (Object.keys(pruned).length !== Object.keys(tagMap).length) {
+    tagMap = pruned;
+    await saveTags();
+  }
   const folders = listFolders(tree);
   treeEl.replaceChildren();
   const roots = tree[0].children ?? [];
@@ -22,7 +41,7 @@ searchEl.addEventListener('input', async () => {
   const query = searchEl.value;
   if (!query.trim()) { await refresh(); return; }
   const tree = await chrome.bookmarks.getTree();
-  const matches = searchBookmarks(flattenBookmarks(tree), query);
+  const matches = searchBookmarks(flattenBookmarks(tree), query, tagMap);
   const folders = listFolders(tree);
   treeEl.replaceChildren();
   const ul = document.createElement('ul');
@@ -80,6 +99,16 @@ function renderBookmark(node, allFolders) {
   li.className = 'bookmark';
 
   if (isSafeUrl(node.url)) {
+    const icon = document.createElement('img');
+    icon.className = 'favicon';
+    icon.width = 16;
+    icon.height = 16;
+    icon.src = chrome.runtime.getURL(faviconParams(node.url, 16));
+    icon.alt = '';
+    li.appendChild(icon);
+  }
+
+  if (isSafeUrl(node.url)) {
     const a = document.createElement('a');
     a.textContent = node.title || node.url;
     a.href = node.url;
@@ -111,6 +140,37 @@ function renderBookmark(node, allFolders) {
     await refresh();
   });
   li.appendChild(move);
+
+  const tagBar = document.createElement('span');
+  tagBar.className = 'tag-bar';
+  for (const tag of tagsFor(tagMap, node.id)) {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.textContent = tag;
+    const x = document.createElement('button');
+    x.className = 'tag-x';
+    x.textContent = '×';
+    x.title = `Remove tag "${tag}"`;
+    x.addEventListener('click', async () => {
+      tagMap = removeTag(tagMap, node.id, tag);
+      await saveTags();
+      await refresh();
+    });
+    chip.appendChild(x);
+    tagBar.appendChild(chip);
+  }
+  const addTagBtn = document.createElement('button');
+  addTagBtn.className = 'tag-add';
+  addTagBtn.textContent = '+ tag';
+  addTagBtn.addEventListener('click', async () => {
+    const value = window.prompt('Add a tag:');
+    if (!value) return;
+    tagMap = addTag(tagMap, node.id, value);
+    await saveTags();
+    await refresh();
+  });
+  tagBar.appendChild(addTagBtn);
+  li.appendChild(tagBar);
 
   return li;
 }
@@ -172,6 +232,26 @@ analyzeBtn.addEventListener('click', async () => {
       );
     }
 
+    const rootIdsForMerge = new Set((tree[0].children ?? []).map(n => n.id));
+    for (const group of findMergeableFolders(folders)) {
+      const mergeable = group.filter(f => !rootIdsForMerge.has(f.id));
+      if (mergeable.length < 2) continue;
+      const [target, ...rest] = mergeable;
+      addSuggestion(
+        `Merge ${mergeable.length} folders named "${target.title}" into one.`,
+        'Merge folders',
+        async () => {
+          for (const folder of rest) {
+            const [sub] = await chrome.bookmarks.getSubTree(folder.id);
+            for (const child of sub.children ?? []) {
+              await chrome.bookmarks.move(child.id, { parentId: target.id });
+            }
+            await chrome.bookmarks.remove(folder.id);
+          }
+        }
+      );
+    }
+
     // Suggest folders for bookmarks sitting directly in root folders (uncategorized).
     const rootIds = new Set((tree[0].children ?? []).map(n => n.id));
     // Cap at 10 so a slow on-device model can't stall the analyze pass.
@@ -192,6 +272,44 @@ analyzeBtn.addEventListener('click', async () => {
           async () => {
             const created = await chrome.bookmarks.create({ parentId: b.parentId, title: newFolderName });
             await chrome.bookmarks.move(b.id, { parentId: created.id });
+          }
+        );
+      }
+    }
+
+    // Suggest tags for up to 10 untagged bookmarks (on-device model).
+    const untagged = flat.filter(b => tagsFor(tagMap, b.id).length === 0).slice(0, 10);
+    const existingTagNames = allTags(tagMap).map(t => t.tag);
+    for (const b of untagged) {
+      const tags = await suggestTags(b, existingTagNames, { createSession: defaultSessionFactory });
+      if (tags.length) {
+        addSuggestion(
+          `Tag "${b.title}" with: ${tags.join(', ')}? (AI suggestion)`,
+          'Apply tags',
+          async () => {
+            for (const t of tags) tagMap = addTag(tagMap, b.id, t);
+            await saveTags();
+          }
+        );
+      }
+    }
+
+    // Offer to split the most crowded user folder into AI-proposed subfolders.
+    const crowded = folders
+      .filter(f => (f.children ?? []).filter(c => c.url).length >= 8)
+      .sort((a, b) => (b.children?.length ?? 0) - (a.children?.length ?? 0))[0];
+    if (crowded) {
+      const items = (crowded.children ?? []).filter(c => c.url);
+      const groups = await suggestReorg(crowded.title, items, { createSession: defaultSessionFactory });
+      for (const group of groups) {
+        addSuggestion(
+          `In "${crowded.title}", create subfolder "${group.name}" for ${group.bookmarkIds.length} bookmark(s)? (AI suggestion)`,
+          'Create subfolder & move',
+          async () => {
+            const created = await chrome.bookmarks.create({ parentId: crowded.id, title: group.name });
+            for (const id of group.bookmarkIds) {
+              await chrome.bookmarks.move(id, { parentId: created.id });
+            }
           }
         );
       }

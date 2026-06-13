@@ -21,4 +21,12 @@ describe('searchBookmarks', () => {
   it('returns empty array for blank query', () => {
     expect(searchBookmarks(flat, '   ')).toEqual([]);
   });
+  it('matches tags from the optional tagMap', () => {
+    const tagMap = { '1': ['frontend', 'work'], '2': ['cooking'] };
+    expect(searchBookmarks(flat, 'work', tagMap).map(b => b.id)).toEqual(['1']);
+    expect(searchBookmarks(flat, 'cooking', tagMap).map(b => b.id)).toEqual(['2']);
+  });
+  it('still works with no tagMap argument (backward compatible)', () => {
+    expect(searchBookmarks(flat, 'react').map(b => b.id)).toEqual(['1']);
+  });
 });

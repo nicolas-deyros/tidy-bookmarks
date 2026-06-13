@@ -9,7 +9,14 @@ on-device AI folder suggestions (Chrome Built-in AI / Gemini Nano).
 3. Click "Load unpacked" and select this folder.
 
 ## Privacy
-- Only permission used: `bookmarks`.
+- Permissions are local-only: `bookmarks`, `storage` (tags), `favicon` (local icon cache), `sidePanel`.
 - No data ever leaves your machine. AI suggestions run on-device via Chrome's
   built-in model; if unavailable, a local rule-based fallback is used.
-- No analytics, no tracking.
+- No analytics, no tracking, no remote requests.
+
+## Features
+- Search bookmarks by topic, title, URL, or tag (popup, side panel, and manager).
+- Per-folder sorting (A–Z, newest, by domain), move-to-folder, favicons.
+- Local tags with one-click AI tag suggestions.
+- Cleanup: duplicate detection, empty-folder removal, same-name folder merge.
+- AI folder suggestions and per-folder reorganization into subfolders.

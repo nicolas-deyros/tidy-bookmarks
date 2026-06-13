@@ -16,7 +16,10 @@ Manifest V3 extension that organizes the user's bookmarks: search, sort, move, d
   fallback in `src/suggestions.js` otherwise. Never a network call.
 
 ## Security rules (non-negotiable)
-- Permissions stay `["bookmarks"]`. Never add host permissions or remote requests.
+- Permissions are LOCAL-ONLY: `bookmarks`, `storage`, `favicon`, `sidePanel`. Never add
+  host permissions, remote requests, or any permission that sends data off-device.
+- Tags live in `chrome.storage.local` as `{ bookmarkId: string[] }`. Tag logic is pure
+  in `src/tags.js`; tag strings are sanitized (see `sanitizeTag`) before storage.
 - Bookmark titles/URLs are UNTRUSTED. Render with `textContent`; never innerHTML/eval.
 - Only assign `href` if `isSafeUrl(url)` (http/https) passes — see `src/url-utils.js`.
 - AI output is UNTRUSTED: existing-folder picks must match the allowlist of real

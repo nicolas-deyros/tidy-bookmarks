@@ -4,4 +4,4 @@ body { width: 320px; margin: 0; padding: 8px; font: 13px system-ui, sans-serif; 
 #results li { padding: 4px 2px; border-bottom: 1px solid #eee; }
 #results a { color: #1a56b0; text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #results .path { color: #888; font-size: 11px; }
-#open-manager { width: 100%; padding: 6px; cursor: pointer; }
+#open-manager, #open-sidebar { width: 100%; padding: 6px; cursor: pointer; margin-top: 4px; }
