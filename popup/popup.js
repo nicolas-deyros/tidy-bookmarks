@@ -1,6 +1,6 @@
 import { flattenBookmarks } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
-import { isSafeUrl } from '../src/url-utils.js';
+import { isSafeUrl, faviconParams } from '../src/url-utils.js';
 
 const input = document.getElementById('search');
 const results = document.getElementById('results');
@@ -16,6 +16,14 @@ function render(matches) {
   for (const b of matches.slice(0, 50)) {
     const li = document.createElement('li');
     if (isSafeUrl(b.url)) {
+      const icon = document.createElement('img');
+      icon.width = 16;
+      icon.height = 16;
+      icon.src = chrome.runtime.getURL(faviconParams(b.url, 16));
+      icon.alt = '';
+      icon.style.marginRight = '6px';
+      icon.style.verticalAlign = 'middle';
+      li.appendChild(icon);
       const a = document.createElement('a');
       a.textContent = b.title || b.url;
       a.href = b.url;
@@ -39,6 +47,12 @@ input.addEventListener('input', () => render(searchBookmarks(flat, input.value))
 
 document.getElementById('open-manager').addEventListener('click', async () => {
   await chrome.tabs.create({ url: chrome.runtime.getURL('manager/manager.html') });
+  window.close();
+});
+
+document.getElementById('open-sidebar').addEventListener('click', async () => {
+  const win = await chrome.windows.getCurrent();
+  await chrome.sidePanel.open({ windowId: win.id });
   window.close();
 });
 
