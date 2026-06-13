@@ -2,9 +2,9 @@ import { sortChildren, SORT_MODES } from '../src/sorting.js';
 import { isSafeUrl, faviconParams } from '../src/url-utils.js';
 import { flattenBookmarks, listFolders, findEmptyFolders } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
-import { findDuplicates } from '../src/suggestions.js';
-import { suggestFolder, defaultSessionFactory } from '../src/ai.js';
-import { addTag, removeTag, tagsFor, pruneTags } from '../src/tags.js';
+import { findDuplicates, findMergeableFolders } from '../src/suggestions.js';
+import { suggestFolder, suggestTags, suggestReorg, defaultSessionFactory } from '../src/ai.js';
+import { addTag, removeTag, tagsFor, pruneTags, allTags } from '../src/tags.js';
 
 const treeEl = document.getElementById('tree');
 const searchEl = document.getElementById('search');
@@ -232,6 +232,26 @@ analyzeBtn.addEventListener('click', async () => {
       );
     }
 
+    const rootIdsForMerge = new Set((tree[0].children ?? []).map(n => n.id));
+    for (const group of findMergeableFolders(folders)) {
+      const mergeable = group.filter(f => !rootIdsForMerge.has(f.id));
+      if (mergeable.length < 2) continue;
+      const [target, ...rest] = mergeable;
+      addSuggestion(
+        `Merge ${mergeable.length} folders named "${target.title}" into one.`,
+        'Merge folders',
+        async () => {
+          for (const folder of rest) {
+            const [sub] = await chrome.bookmarks.getSubTree(folder.id);
+            for (const child of sub.children ?? []) {
+              await chrome.bookmarks.move(child.id, { parentId: target.id });
+            }
+            await chrome.bookmarks.remove(folder.id);
+          }
+        }
+      );
+    }
+
     // Suggest folders for bookmarks sitting directly in root folders (uncategorized).
     const rootIds = new Set((tree[0].children ?? []).map(n => n.id));
     // Cap at 10 so a slow on-device model can't stall the analyze pass.
@@ -252,6 +272,44 @@ analyzeBtn.addEventListener('click', async () => {
           async () => {
             const created = await chrome.bookmarks.create({ parentId: b.parentId, title: newFolderName });
             await chrome.bookmarks.move(b.id, { parentId: created.id });
+          }
+        );
+      }
+    }
+
+    // Suggest tags for up to 10 untagged bookmarks (on-device model).
+    const untagged = flat.filter(b => tagsFor(tagMap, b.id).length === 0).slice(0, 10);
+    const existingTagNames = allTags(tagMap).map(t => t.tag);
+    for (const b of untagged) {
+      const tags = await suggestTags(b, existingTagNames, { createSession: defaultSessionFactory });
+      if (tags.length) {
+        addSuggestion(
+          `Tag "${b.title}" with: ${tags.join(', ')}? (AI suggestion)`,
+          'Apply tags',
+          async () => {
+            for (const t of tags) tagMap = addTag(tagMap, b.id, t);
+            await saveTags();
+          }
+        );
+      }
+    }
+
+    // Offer to split the most crowded user folder into AI-proposed subfolders.
+    const crowded = folders
+      .filter(f => (f.children ?? []).filter(c => c.url).length >= 8)
+      .sort((a, b) => (b.children?.length ?? 0) - (a.children?.length ?? 0))[0];
+    if (crowded) {
+      const items = (crowded.children ?? []).filter(c => c.url);
+      const groups = await suggestReorg(crowded.title, items, { createSession: defaultSessionFactory });
+      for (const group of groups) {
+        addSuggestion(
+          `In "${crowded.title}", create subfolder "${group.name}" for ${group.bookmarkIds.length} bookmark(s)? (AI suggestion)`,
+          'Create subfolder & move',
+          async () => {
+            const created = await chrome.bookmarks.create({ parentId: crowded.id, title: group.name });
+            for (const id of group.bookmarkIds) {
+              await chrome.bookmarks.move(id, { parentId: created.id });
+            }
           }
         );
       }
