@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planFlat, planByRecency, recommendMethodology, parseMethodologyPlan } from '../src/reorg.js';
+import { planFlat, planByRecency, recommendMethodology, parseMethodologyPlan, snapshotSubtree, planUndo } from '../src/reorg.js';
 
 const now = Date.UTC(2026, 0, 31); // 2026-01-31
 const day = 86400000;
@@ -76,5 +76,53 @@ describe('parseMethodologyPlan', () => {
   });
   it('returns [] for non-string input', () => {
     expect(parseMethodologyPlan(undefined, planBks, 'topic')).toEqual([]);
+  });
+});
+
+const undoFolder = { id: 'F', title: 'Dev', children: [
+  { id: 'b1', title: 'A', url: 'https://a.com' },
+  { id: 'b2', title: 'B', url: 'https://b.com' },
+  { id: 'sub', title: 'Old', children: [
+    { id: 'b3', title: 'C', url: 'https://c.com' }
+  ] }
+] };
+
+describe('snapshotSubtree', () => {
+  it('records id, parentId, index, title for every descendant', () => {
+    expect(snapshotSubtree(undoFolder)).toEqual([
+      { id: 'b1', parentId: 'F', index: 0, title: 'A' },
+      { id: 'b2', parentId: 'F', index: 1, title: 'B' },
+      { id: 'sub', parentId: 'F', index: 2, title: 'Old' },
+      { id: 'b3', parentId: 'sub', index: 0, title: 'C' }
+    ]);
+  });
+});
+
+describe('planUndo', () => {
+  it('returns moves restoring each snapshot entry to its recorded parent/index', () => {
+    const snapshot = [
+      { id: 'b1', parentId: 'F', index: 0, title: 'A' },
+      { id: 'b3', parentId: 'sub', index: 0, title: 'C' }
+    ];
+    const currentTree = [{ id: '0', children: [
+      { id: 'F', children: [
+        { id: 'New', children: [{ id: 'b1', url: 'https://a.com' }] }
+      ] },
+      { id: 'sub', children: [{ id: 'b3', url: 'https://c.com' }] }
+    ] }];
+    expect(planUndo(snapshot, currentTree)).toEqual([
+      { id: 'b1', parentId: 'F', index: 0 },
+      { id: 'b3', parentId: 'sub', index: 0 }
+    ]);
+  });
+  it('skips entries whose id no longer exists', () => {
+    const snapshot = [{ id: 'gone', parentId: 'F', index: 0, title: 'X' }];
+    const currentTree = [{ id: '0', children: [{ id: 'F', children: [] }] }];
+    expect(planUndo(snapshot, currentTree)).toEqual([]);
+  });
+  it('skips entries whose recorded parent no longer exists (e.g. a folder Flat deleted)', () => {
+    const snapshot = [{ id: 'b3', parentId: 'sub', index: 0, title: 'C' }];
+    const currentTree = [{ id: '0', children: [{ id: 'F', children: [{ id: 'b3', url: 'https://c.com' }] }] }];
+    expect(planUndo(snapshot, currentTree)).toEqual([]);
   });
 });

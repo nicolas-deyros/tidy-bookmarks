@@ -63,3 +63,28 @@ export function recommendMethodology(bookmarks) {
   const variety = domains.size / n;
   return variety >= 0.8 ? 'topic' : 'para';
 }
+
+export function snapshotSubtree(folder) {
+  const out = [];
+  function walk(parent) {
+    (parent.children ?? []).forEach((node, index) => {
+      out.push({ id: node.id, parentId: parent.id, index, title: node.title });
+      if (node.children) walk(node);
+    });
+  }
+  walk(folder);
+  return out;
+}
+
+export function planUndo(snapshot, currentTree) {
+  const existing = new Set();
+  (function collect(nodes) {
+    for (const n of nodes) {
+      existing.add(n.id);
+      if (n.children) collect(n.children);
+    }
+  })(currentTree);
+  return snapshot
+    .filter(entry => existing.has(entry.id) && existing.has(entry.parentId))
+    .map(entry => ({ id: entry.id, parentId: entry.parentId, index: entry.index }));
+}
