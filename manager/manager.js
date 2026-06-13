@@ -174,6 +174,7 @@ analyzeBtn.addEventListener('click', async () => {
 
     // Suggest folders for bookmarks sitting directly in root folders (uncategorized).
     const rootIds = new Set((tree[0].children ?? []).map(n => n.id));
+    // Cap at 10 so a slow on-device model can't stall the analyze pass.
     const uncategorized = flat.filter(b => rootIds.has(b.parentId)).slice(0, 10);
     for (const b of uncategorized) {
       const { folder, newFolderName, source } =
