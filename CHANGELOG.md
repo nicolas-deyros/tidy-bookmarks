@@ -2,6 +2,19 @@
 
 All notable changes to Bookmark Organizer. Format based on [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning. Everything runs on-device — no network, no tracking.
 
+## [0.4.1] — 2026-06-13
+
+### Fixed
+- Popup/side panel now follow dark mode (shared `theme.css`).
+- Popup results list flexes to fill height; action buttons stay anchored.
+- Suggestions tab now switches views (`[hidden]` no longer overridden by `display: grid`).
+- A folder is auto-selected on load, so the Sort control is visible immediately.
+
+### Added
+- Auto / Light / Dark theme selector (persisted; applies to manager, popup, side panel).
+- Keyboard shortcuts: `/` search, `b`/`s` switch views, `Esc` close; global Ctrl/Cmd+Shift+B opens the popup.
+- Help panel (`?`) listing features and shortcuts.
+
 ## [0.4.0] — 2026-06-13
 
 ### Added
