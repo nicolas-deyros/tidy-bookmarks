@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planFlat, planByRecency, recommendMethodology } from '../src/reorg.js';
+import { planFlat, planByRecency, recommendMethodology, parseMethodologyPlan } from '../src/reorg.js';
 
 const now = Date.UTC(2026, 0, 31); // 2026-01-31
 const day = 86400000;
@@ -47,5 +47,34 @@ describe('recommendMethodology', () => {
   });
   it('defaults to flat for an empty folder', () => {
     expect(recommendMethodology([])).toBe('flat');
+  });
+});
+
+const planBks = [
+  { id: 'b1', title: 'A', url: 'https://a.com' },
+  { id: 'b2', title: 'B', url: 'https://b.com' },
+  { id: 'b3', title: 'C', url: 'https://c.com' }
+];
+
+describe('parseMethodologyPlan', () => {
+  it('maps numbers to ids and sanitizes names', () => {
+    expect(parseMethodologyPlan('Projects: 1, 3\nAreas: 2', planBks, 'para')).toEqual([
+      { name: 'Projects', bookmarkIds: ['b1', 'b3'] },
+      { name: 'Areas', bookmarkIds: ['b2'] }
+    ]);
+  });
+  it('drops out-of-range numbers and unparseable lines', () => {
+    expect(parseMethodologyPlan('junk\nGood: 2, 99', planBks, 'topic')).toEqual([
+      { name: 'Good', bookmarkIds: ['b2'] }
+    ]);
+  });
+  it('de-duplicates an id across groups (first group wins)', () => {
+    expect(parseMethodologyPlan('One: 1, 2\nTwo: 2, 3', planBks, 'topic')).toEqual([
+      { name: 'One', bookmarkIds: ['b1', 'b2'] },
+      { name: 'Two', bookmarkIds: ['b3'] }
+    ]);
+  });
+  it('returns [] for non-string input', () => {
+    expect(parseMethodologyPlan(undefined, planBks, 'topic')).toEqual([]);
   });
 });

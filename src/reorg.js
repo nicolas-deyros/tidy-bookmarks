@@ -20,6 +20,41 @@ export function planByRecency(bookmarks, now) {
     .map(name => ({ name, bookmarkIds: buckets[name] }));
 }
 
+function sanitizeName(name) {
+  if (typeof name !== 'string') return null;
+  const cleaned = [...name]
+    .filter(ch => { const c = ch.codePointAt(0); return c >= 0x20 && c !== 0x7f; })
+    .join('')
+    .trim()
+    .replace(/^["']+|["']+$/g, '')
+    .trim()
+    .slice(0, 40);
+  return cleaned || null;
+}
+
+export function parseMethodologyPlan(response, bookmarks) {
+  if (typeof response !== 'string') return [];
+  const used = new Set();
+  const groups = [];
+  for (const line of response.split('\n')) {
+    const m = line.match(/^\s*(.+?):\s*([\d,\s]+)$/);
+    if (!m) continue;
+    const name = sanitizeName(m[1]);
+    if (!name) continue;
+    const ids = [];
+    for (const part of m[2].split(',')) {
+      const num = Number.parseInt(part.trim(), 10);
+      if (!Number.isInteger(num) || num < 1 || num > bookmarks.length) continue;
+      const id = bookmarks[num - 1].id;
+      if (used.has(id)) continue;
+      used.add(id);
+      ids.push(id);
+    }
+    if (ids.length) groups.push({ name, bookmarkIds: ids });
+  }
+  return groups;
+}
+
 export function recommendMethodology(bookmarks) {
   const n = bookmarks.length;
   if (n === 0) return 'flat';
