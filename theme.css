@@ -1,0 +1,17 @@
+:root {
+  --bg: #ffffff; --bg-soft: #f5f6f8; --bg-sel: #e8eefc;
+  --text: #222222; --text-soft: #888888; --border: #dddddd;
+  --link: #1a56b0; --danger: #c0392b; --chip-bg: #eef2ff; --chip-text: #3349a8;
+}
+:root[data-theme="dark"] {
+  --bg: #1e1f22; --bg-soft: #2a2c30; --bg-sel: #2f3a52;
+  --text: #e6e6e6; --text-soft: #9aa0a6; --border: #3a3d42;
+  --link: #6ea8fe; --danger: #e06b5e; --chip-bg: #2f3a52; --chip-text: #aac4ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    --bg: #1e1f22; --bg-soft: #2a2c30; --bg-sel: #2f3a52;
+    --text: #e6e6e6; --text-soft: #9aa0a6; --border: #3a3d42;
+    --link: #6ea8fe; --danger: #e06b5e; --chip-bg: #2f3a52; --chip-text: #aac4ff;
+  }
+}

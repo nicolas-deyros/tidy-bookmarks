@@ -13,6 +13,7 @@ const searchEl = document.getElementById('search');
 const tabBrowse = document.getElementById('tab-browse');
 const tabSuggestions = document.getElementById('tab-suggestions');
 const analyzeBtn = document.getElementById('run-suggestions');
+const themeSelect = document.getElementById('theme-select');
 
 let tagMap = {};
 let uiState = { expanded: new Set(), selected: '' };
@@ -21,10 +22,12 @@ let search = '';
 let drag = null; // { id, kind }
 
 async function loadState() {
-  const { tags = {}, uiState: saved = {} } = await chrome.storage.local.get(['tags', 'uiState']);
+  const { tags = {}, uiState: saved = {}, theme = 'auto' } = await chrome.storage.local.get(['tags', 'uiState', 'theme']);
   tagMap = tags;
   uiState.expanded = new Set(saved.expanded ?? []);
   uiState.selected = saved.selected ?? '';
+  document.documentElement.dataset.theme = theme;
+  themeSelect.value = theme;
 }
 
 async function saveTags() { await chrome.storage.local.set({ tags: tagMap }); }
@@ -98,5 +101,10 @@ analyzeBtn.addEventListener('click', () => {
     .finally(() => { analyzeBtn.disabled = false; analyzeBtn.textContent = 'Analyze bookmarks'; });
 });
 searchEl.addEventListener('input', () => { search = searchEl.value; renderContents(contentsEl, ctx); });
+
+themeSelect.addEventListener('change', async () => {
+  document.documentElement.dataset.theme = themeSelect.value;
+  await chrome.storage.local.set({ theme: themeSelect.value });
+});
 
 refresh().catch(err => { contentsEl.textContent = `Failed to load bookmarks: ${err.message}`; });
