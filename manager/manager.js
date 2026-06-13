@@ -1,5 +1,5 @@
 import { sortChildren, SORT_MODES } from '../src/sorting.js';
-import { isSafeUrl } from '../src/url-utils.js';
+import { isSafeUrl, faviconParams } from '../src/url-utils.js';
 import { flattenBookmarks, listFolders, findEmptyFolders } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
 import { findDuplicates } from '../src/suggestions.js';
@@ -41,7 +41,7 @@ searchEl.addEventListener('input', async () => {
   const query = searchEl.value;
   if (!query.trim()) { await refresh(); return; }
   const tree = await chrome.bookmarks.getTree();
-  const matches = searchBookmarks(flattenBookmarks(tree), query);
+  const matches = searchBookmarks(flattenBookmarks(tree), query, tagMap);
   const folders = listFolders(tree);
   treeEl.replaceChildren();
   const ul = document.createElement('ul');
@@ -97,6 +97,16 @@ function renderFolder(folder, allFolders) {
 function renderBookmark(node, allFolders) {
   const li = document.createElement('li');
   li.className = 'bookmark';
+
+  if (isSafeUrl(node.url)) {
+    const icon = document.createElement('img');
+    icon.className = 'favicon';
+    icon.width = 16;
+    icon.height = 16;
+    icon.src = chrome.runtime.getURL(faviconParams(node.url, 16));
+    icon.alt = '';
+    li.appendChild(icon);
+  }
 
   if (isSafeUrl(node.url)) {
     const a = document.createElement('a');
