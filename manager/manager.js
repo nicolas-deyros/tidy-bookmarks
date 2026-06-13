@@ -1,7 +1,9 @@
 import { sortChildren, SORT_MODES } from '../src/sorting.js';
 import { isSafeUrl } from '../src/url-utils.js';
-import { flattenBookmarks, listFolders } from '../src/tree.js';
+import { flattenBookmarks, listFolders, findEmptyFolders } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
+import { findDuplicates } from '../src/suggestions.js';
+import { suggestFolder, defaultSessionFactory } from '../src/ai.js';
 
 const treeEl = document.getElementById('tree');
 const searchEl = document.getElementById('search');
@@ -120,6 +122,90 @@ async function applySort(folderId, mode) {
     await chrome.bookmarks.move(sorted[i].id, { parentId: folderId, index: i });
   }
 }
+
+const suggestionsOutput = document.getElementById('suggestions-output');
+const analyzeBtn = document.getElementById('run-suggestions');
+
+function addSuggestion(text, actionLabel, action) {
+  const div = document.createElement('div');
+  div.className = 'suggestion';
+  const p = document.createElement('p');
+  p.textContent = text;
+  div.appendChild(p);
+  if (action) {
+    const btn = document.createElement('button');
+    btn.textContent = actionLabel;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      await action();
+      div.remove();
+      await refresh();
+    });
+    div.appendChild(btn);
+  }
+  suggestionsOutput.appendChild(div);
+}
+
+analyzeBtn.addEventListener('click', async () => {
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = 'Analyzing…';
+  suggestionsOutput.replaceChildren();
+  try {
+    const tree = await chrome.bookmarks.getTree();
+    const flat = flattenBookmarks(tree);
+    const folders = listFolders(tree);
+
+    for (const group of findDuplicates(flat)) {
+      const extras = group.slice(1);
+      addSuggestion(
+        `Duplicate: "${group[0].title}" appears ${group.length} times.`,
+        `Remove ${extras.length} duplicate(s)`,
+        async () => { for (const b of extras) await chrome.bookmarks.remove(b.id); }
+      );
+    }
+
+    for (const folder of findEmptyFolders(tree)) {
+      addSuggestion(
+        `Empty folder: "${folder.title}".`,
+        'Delete folder',
+        async () => { await chrome.bookmarks.remove(folder.id); }
+      );
+    }
+
+    // Suggest folders for bookmarks sitting directly in root folders (uncategorized).
+    const rootIds = new Set((tree[0].children ?? []).map(n => n.id));
+    const uncategorized = flat.filter(b => rootIds.has(b.parentId)).slice(0, 10);
+    for (const b of uncategorized) {
+      const { folder, newFolderName, source } =
+        await suggestFolder(b, folders, { createSession: defaultSessionFactory });
+      if (folder) {
+        addSuggestion(
+          `Move "${b.title}" into "${folder.title}"? (${source === 'ai' ? 'AI suggestion' : 'rule-based'})`,
+          'Move it',
+          async () => { await chrome.bookmarks.move(b.id, { parentId: folder.id }); }
+        );
+      } else if (newFolderName) {
+        addSuggestion(
+          `Create a new folder "${newFolderName}" for "${b.title}"? (AI suggestion)`,
+          'Create folder & move',
+          async () => {
+            const created = await chrome.bookmarks.create({ parentId: b.parentId, title: newFolderName });
+            await chrome.bookmarks.move(b.id, { parentId: created.id });
+          }
+        );
+      }
+    }
+
+    if (suggestionsOutput.childElementCount === 0) {
+      addSuggestion('No suggestions — your bookmarks look tidy!', null, null);
+    }
+  } catch (err) {
+    addSuggestion(`Analysis failed: ${err.message}`, null, null);
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = 'Analyze bookmarks';
+  }
+});
 
 refresh().catch(err => {
   treeEl.textContent = `Failed to load bookmarks: ${err.message}`;
