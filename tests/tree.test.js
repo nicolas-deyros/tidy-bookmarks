@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { flattenBookmarks, listFolders, findEmptyFolders } from '../src/tree.js';
+import { flattenBookmarks, listFolders, findEmptyFolders, countContents } from '../src/tree.js';
 
 const tree = [{
   id: '0', title: '',
@@ -44,5 +44,21 @@ describe('findEmptyFolders', () => {
       ]
     }];
     expect(findEmptyFolders(withEmptyRoot)).toEqual([]);
+  });
+});
+
+describe('countContents', () => {
+  it('counts descendant bookmarks and folders recursively', () => {
+    const folder = { id: 'f', title: 'Dev', children: [
+      { id: 'b1', title: 'A', url: 'https://a.com' },
+      { id: 'sub', title: 'Sub', children: [
+        { id: 'b2', title: 'B', url: 'https://b.com' },
+        { id: 'b3', title: 'C', url: 'https://c.com' }
+      ] }
+    ] };
+    expect(countContents(folder)).toEqual({ bookmarks: 3, folders: 1 });
+  });
+  it('returns zeros for an empty folder', () => {
+    expect(countContents({ id: 'e', title: 'Empty', children: [] })).toEqual({ bookmarks: 0, folders: 0 });
   });
 });

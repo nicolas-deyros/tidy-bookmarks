@@ -34,3 +34,19 @@ export function findEmptyFolders(tree) {
   });
   return out;
 }
+
+export function countContents(folder) {
+  let bookmarks = 0;
+  let folders = 0;
+  for (const child of folder.children ?? []) {
+    if (child.url) {
+      bookmarks++;
+    } else {
+      folders++;
+      const sub = countContents(child);
+      bookmarks += sub.bookmarks;
+      folders += sub.folders;
+    }
+  }
+  return { bookmarks, folders };
+}
