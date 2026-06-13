@@ -8,17 +8,20 @@
 <body>
   <header>
     <h1>Bookmark Organizer</h1>
-    <input id="search" type="search" placeholder="Search by topic, title, or URL…">
+    <input id="search" type="search" placeholder="Search by topic, title, URL, or tag…">
+    <div id="view-toggle" role="tablist">
+      <button id="tab-browse" role="tab" aria-selected="true">Browse</button>
+      <button id="tab-suggestions" role="tab" aria-selected="false">Suggestions</button>
+    </div>
   </header>
   <main>
-    <section id="suggestions-panel">
-      <h2>Suggestions</h2>
-      <button id="run-suggestions">Analyze bookmarks</button>
-      <div id="suggestions-output"></div>
+    <section id="browse-view">
+      <aside id="folder-rail" aria-label="Folders"></aside>
+      <section id="contents" aria-label="Bookmarks"></section>
     </section>
-    <section id="tree-panel">
-      <h2>Bookmarks</h2>
-      <div id="tree"></div>
+    <section id="suggestions-view" hidden>
+      <button id="run-suggestions">Analyze bookmarks</button>
+      <div id="suggestions-container"></div>
     </section>
   </main>
   <script type="module" src="manager.js"></script>
