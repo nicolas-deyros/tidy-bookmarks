@@ -1,5 +1,6 @@
 import { domainOf } from './url-utils.js';
 import { suggestFolderByRules } from './suggestions.js';
+import { sanitizeTag } from './tags.js';
 
 export function buildPrompt(bookmark, folders) {
   const names = folders.map(f => f.title).join(', ');
@@ -77,4 +78,43 @@ export async function suggestFolder(bookmark, folders, { createSession } = {}) {
     }
   }
   return { folder: suggestFolderByRules(bookmark, folders), newFolderName: null, source: 'rules' };
+}
+
+export function buildTagPrompt(bookmark, existingTags) {
+  const names = existingTags.join(', ');
+  return [
+    'You tag browser bookmarks with short topic labels.',
+    `Bookmark title: ${bookmark.title}`,
+    `Bookmark domain: ${domainOf(bookmark.url)}`,
+    `Existing tags you may reuse: ${names || '(none yet)'}`,
+    'Reply with 1-3 comma-separated lowercase tags, and nothing else.'
+  ].join('\n');
+}
+
+export function parseTags(response, { max = 3 } = {}) {
+  if (typeof response !== 'string') return [];
+  const seen = [];
+  for (const part of response.split(',')) {
+    const t = sanitizeTag(part);
+    if (t && !seen.includes(t)) seen.push(t);
+    if (seen.length === max) break;
+  }
+  return seen;
+}
+
+export async function suggestTags(bookmark, existingTags, { createSession } = {}) {
+  if (!createSession) return [];
+  let session = null;
+  try {
+    session = await createSession();
+    if (session) {
+      const response = await session.prompt(buildTagPrompt(bookmark, existingTags));
+      return parseTags(response);
+    }
+  } catch (err) {
+    console.warn('AI tag suggestion failed:', err);
+  } finally {
+    try { session?.destroy?.(); } catch { /* ignore a misbehaving session */ }
+  }
+  return [];
 }

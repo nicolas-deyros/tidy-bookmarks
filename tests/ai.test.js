@@ -84,3 +84,38 @@ describe('suggestFolder', () => {
     expect(result.folder).toBeNull();
   });
 });
+
+import { buildTagPrompt, parseTags, suggestTags } from '../src/ai.js';
+
+describe('buildTagPrompt', () => {
+  it('includes title, domain, and existing tags', () => {
+    const p = buildTagPrompt({ title: 'React docs', url: 'https://react.dev' }, ['frontend']);
+    expect(p).toContain('React docs');
+    expect(p).toContain('react.dev');
+    expect(p).toContain('frontend');
+  });
+});
+
+describe('parseTags', () => {
+  it('splits, sanitizes, and caps at 3 by default', () => {
+    expect(parseTags('Frontend, React, JavaScript, Web, Docs')).toEqual(['frontend', 'react', 'javascript']);
+  });
+  it('returns [] for junk or non-string', () => {
+    expect(parseTags('   ')).toEqual([]);
+    expect(parseTags(undefined)).toEqual([]);
+  });
+});
+
+describe('suggestTags', () => {
+  it('returns sanitized tags from the model', async () => {
+    const fakeSession = { prompt: async () => 'Frontend, React', destroy: () => {} };
+    const tags = await suggestTags(
+      { title: 'React', url: 'https://react.dev' }, [],
+      { createSession: async () => fakeSession }
+    );
+    expect(tags).toEqual(['frontend', 'react']);
+  });
+  it('returns [] when no session factory is available', async () => {
+    expect(await suggestTags({ title: 'X', url: 'https://x.io' }, [], { createSession: null })).toEqual([]);
+  });
+});
