@@ -1,10 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Organizer",
-  "version": "0.1.0",
-  "description": "Search, sort, and reorganize your bookmarks with private on-device AI suggestions.",
-  "permissions": ["bookmarks"],
+  "version": "0.2.0",
+  "description": "Search, sort, tag, and reorganize your bookmarks with private on-device AI suggestions.",
+  "permissions": ["bookmarks", "storage", "favicon", "sidePanel"],
   "action": {
     "default_popup": "popup/popup.html"
+  },
+  "side_panel": {
+    "default_path": "popup/popup.html"
   }
 }
