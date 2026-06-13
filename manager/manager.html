@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Bookmark Organizer</title>
+  <link rel="stylesheet" href="../theme.css">
   <link rel="stylesheet" href="manager.css">
 </head>
 <body>
@@ -13,6 +14,12 @@
       <button id="tab-browse" role="tab" aria-selected="true">Browse</button>
       <button id="tab-suggestions" role="tab" aria-selected="false">Suggestions</button>
     </div>
+    <select id="theme-select" aria-label="Theme">
+      <option value="auto">Auto</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+    <button id="help-btn" aria-label="Help">?</button>
   </header>
   <main>
     <section id="browse-view">

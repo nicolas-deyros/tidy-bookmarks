@@ -1,7 +1,7 @@
 # Chrome Web Store Listing — Bookmark Organizer
 
 **Last Updated:** 2026-06-13
-**Version:** 0.4.0
+**Version:** 0.4.1
 
 ## Short description
 Search, sort, tag, and reorganize your bookmarks with private on-device AI suggestions.
@@ -18,6 +18,7 @@ Search, sort, tag, and reorganize your bookmarks with private on-device AI sugge
 - AI folder/tag suggestions run on-device via Chrome's built-in model (Gemini Nano); if unavailable, a local rule-based fallback is used.
 
 ## Version History
+- 0.4.1 — Auto/Light/Dark theme toggle (sidebar now respects dark mode), popup fills height, fixed Suggestions tab, auto-selected first folder, keyboard shortcuts, and an in-app help panel.
 - 0.4.0 — Methodology reorganization: reorganize a folder by PARA, Johnny.Decimal, Topic, By-recency, or Flat, with an approvable preview and one-click undo. No new permissions.
 - 0.3.0 — Two-pane manager: collapsible folder rail with counts, drag-and-drop (bookmarks and folders), Browse/Suggestions toggle, automatic dark mode.
 - 0.2.1 — Confirm-before-delete modal with impact detail, richer suggestion text, viewport-based heights, generated extension icon, inline tag editor with autocomplete and AI tag suggestions.

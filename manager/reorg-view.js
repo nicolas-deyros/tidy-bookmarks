@@ -54,7 +54,7 @@ export function openReorg(folder, ctx) {
   actions.className = 'modal-actions';
   const cancel = document.createElement('button');
   cancel.textContent = 'Cancel';
-  cancel.addEventListener('click', () => overlay.remove());
+  cancel.addEventListener('click', () => close());
   const apply = document.createElement('button');
   apply.textContent = 'Apply selected';
   apply.className = 'danger';
@@ -97,7 +97,7 @@ export function openReorg(folder, ctx) {
   apply.addEventListener('click', async () => {
     const checked = new Set([...preview.querySelectorAll('input:checked')].map(i => i.dataset.group));
     const groups = currentGroups.filter(g => checked.has(g.name));
-    if (groups.length === 0) { overlay.remove(); return; }
+    if (groups.length === 0) { close(); return; }
     apply.disabled = true;
 
     const snapshot = snapshotSubtree(folder);
@@ -119,9 +119,16 @@ export function openReorg(folder, ctx) {
       }
     }
     await chrome.storage.local.set({ lastReorg: { folderId: folder.id, snapshot, createdIds } });
-    overlay.remove();
+    close();
     await ctx.refresh();
   });
+
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  function close() {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+  document.addEventListener('keydown', onKey);
 
   box.appendChild(actions);
   overlay.appendChild(box);

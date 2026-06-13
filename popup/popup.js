@@ -10,8 +10,9 @@ let tagMap = {};
 async function init() {
   const tree = await chrome.bookmarks.getTree();
   flat = flattenBookmarks(tree);
-  const { tags = {} } = await chrome.storage.local.get('tags');
+  const { tags = {}, theme = 'auto' } = await chrome.storage.local.get(['tags', 'theme']);
   tagMap = tags;
+  document.documentElement.dataset.theme = theme;
 }
 
 function render(matches) {

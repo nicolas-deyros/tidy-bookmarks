@@ -26,3 +26,4 @@ on-device AI folder suggestions (Chrome Built-in AI / Gemini Nano).
 - Two-pane manager with a collapsible folder rail, bookmark counts, and drag-and-drop.
 - Automatic dark mode that follows your system setting.
 - Reorganize a folder by methodology (PARA, Johnny.Decimal, topic, by-recency, flat) with a preview and one-click undo.
+- Auto/Light/Dark theme, keyboard shortcuts, and an in-app help panel.
