@@ -4,6 +4,7 @@ import { searchBookmarks } from '../src/search.js';
 import { flattenBookmarks, listFolders } from '../src/tree.js';
 import { addTag, removeTag, tagsFor, allTags } from '../src/tags.js';
 import { suggestTags, defaultSessionFactory } from '../src/ai.js';
+import { openReorg, renderUndoBar } from './reorg-view.js';
 
 const SORT_LABELS = { alphabetical: 'A–Z', dateAdded: 'Newest first', domain: 'By domain' };
 
@@ -32,6 +33,8 @@ export function renderContents(container, ctx) {
     return;
   }
 
+  renderUndoBar(container, ctx);
+
   const toolbar = document.createElement('div');
   toolbar.className = 'content-toolbar';
   const title = document.createElement('strong');
@@ -51,6 +54,12 @@ export function renderContents(container, ctx) {
     await ctx.refresh();
   });
   toolbar.appendChild(sortSel);
+
+  const reorgBtn = document.createElement('button');
+  reorgBtn.textContent = 'Reorganize';
+  reorgBtn.addEventListener('click', () => openReorg(folder, ctx));
+  toolbar.appendChild(reorgBtn);
+
   container.appendChild(toolbar);
 
   const folders = listFolders(ctx.tree);
