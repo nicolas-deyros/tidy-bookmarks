@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findDuplicates, suggestFolderByRules } from '../src/suggestions.js';
+import { findDuplicates, suggestFolderByRules, findMergeableFolders } from '../src/suggestions.js';
 
 describe('findDuplicates', () => {
   it('groups bookmarks whose normalized URLs match', () => {
@@ -32,5 +32,21 @@ describe('suggestFolderByRules', () => {
   });
   it('returns null when nothing matches', () => {
     expect(suggestFolderByRules({ title: 'Weather', url: 'https://weather.io' }, folders)).toBeNull();
+  });
+});
+
+describe('findMergeableFolders', () => {
+  it('groups folders that share a case-insensitive title', () => {
+    const folders = [
+      { id: 'a', title: 'Dev' },
+      { id: 'b', title: 'dev' },
+      { id: 'c', title: 'Recipes' }
+    ];
+    const groups = findMergeableFolders(folders);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].map(f => f.id)).toEqual(['a', 'b']);
+  });
+  it('ignores untitled folders and returns [] when nothing matches', () => {
+    expect(findMergeableFolders([{ id: 'a', title: 'Dev' }, { id: 'b', title: '' }])).toEqual([]);
   });
 });

@@ -22,3 +22,14 @@ export function suggestFolderByRules(bookmark, folders) {
   }
   return null;
 }
+
+export function findMergeableFolders(folders) {
+  const byName = new Map();
+  for (const f of folders) {
+    const key = (f.title || '').trim().toLowerCase();
+    if (!key) continue;
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(f);
+  }
+  return [...byName.values()].filter(group => group.length > 1);
+}
