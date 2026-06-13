@@ -49,9 +49,15 @@ export function parseSuggestion(response, folders) {
 // Returns null when unavailable so callers fall back to rules.
 export async function defaultSessionFactory() {
   if (typeof LanguageModel === 'undefined') return null;
-  const availability = await LanguageModel.availability();
+  // Declaring expected input/output language lets Chrome attest output safety
+  // and silences the "No output language was specified" warning.
+  const options = {
+    expectedInputs: [{ type: 'text', languages: ['en'] }],
+    expectedOutputs: [{ type: 'text', languages: ['en'] }]
+  };
+  const availability = await LanguageModel.availability(options);
   if (availability === 'unavailable') return null;
-  return LanguageModel.create();
+  return LanguageModel.create(options);
 }
 
 export async function suggestFolder(bookmark, folders, { createSession } = {}) {

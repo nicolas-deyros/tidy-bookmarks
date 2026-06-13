@@ -35,4 +35,14 @@ describe('findEmptyFolders', () => {
   it('finds folders with no children', () => {
     expect(findEmptyFolders(tree).map(f => f.id)).toEqual(['101']);
   });
+  it('never returns Chrome\'s permanent root folders (they cannot be deleted)', () => {
+    const withEmptyRoot = [{
+      id: '0', title: '',
+      children: [
+        { id: '1', title: 'Bookmarks bar', parentId: '0', children: [] },
+        { id: '2', title: 'Other bookmarks', parentId: '0', children: [] }
+      ]
+    }];
+    expect(findEmptyFolders(withEmptyRoot)).toEqual([]);
+  });
 });
