@@ -52,3 +52,8 @@ header h1 { font-size: 18px; margin: 0; }
 .reorg-group-title { font-weight: 500; }
 .undo-bar { display: flex; align-items: center; gap: 10px; background: var(--bg-sel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
 .undo-bar button { cursor: pointer; }
+#help-btn { width: 28px; height: 28px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 50%; cursor: pointer; }
+.help-box { max-width: 460px; }
+.help-section { font-weight: 500; margin: 12px 0 4px; }
+.help-box ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+.help-box kbd { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 12px; }

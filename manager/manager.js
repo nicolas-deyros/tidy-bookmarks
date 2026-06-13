@@ -2,6 +2,7 @@ import { renderRail } from './folder-rail.js';
 import { renderContents } from './contents.js';
 import { renderSuggestions } from './suggestions-view.js';
 import { confirmModal } from './modal.js';
+import { openHelp } from './help.js';
 import { isDescendant, dropIndex, listFolders } from '../src/tree.js';
 
 const railEl = document.getElementById('folder-rail');
@@ -110,6 +111,8 @@ themeSelect.addEventListener('change', async () => {
   document.documentElement.dataset.theme = themeSelect.value;
   await chrome.storage.local.set({ theme: themeSelect.value });
 });
+
+document.getElementById('help-btn').addEventListener('click', openHelp);
 
 document.addEventListener('keydown', e => {
   const tag = e.target.tagName;
