@@ -23,3 +23,5 @@ on-device AI folder suggestions (Chrome Built-in AI / Gemini Nano).
 - Confirm-before-delete modal showing exactly what each deletion affects.
 - Inline tag editor with autocomplete from your existing tags and on-device AI tag suggestions.
 - Generated extension icon; viewport-aware layout.
+- Two-pane manager with a collapsible folder rail, bookmark counts, and drag-and-drop.
+- Automatic dark mode that follows your system setting.
