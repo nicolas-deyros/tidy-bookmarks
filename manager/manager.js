@@ -162,17 +162,78 @@ function renderBookmark(node, allFolders) {
   const addTagBtn = document.createElement('button');
   addTagBtn.className = 'tag-add';
   addTagBtn.textContent = '+ tag';
-  addTagBtn.addEventListener('click', async () => {
-    const value = window.prompt('Add a tag:');
-    if (!value) return;
-    tagMap = addTag(tagMap, node.id, value);
-    await saveTags();
-    await refresh();
-  });
+  addTagBtn.addEventListener('click', () => openTagEditor(node, tagBar, addTagBtn));
   tagBar.appendChild(addTagBtn);
   li.appendChild(tagBar);
 
   return li;
+}
+
+async function commitTag(node, value) {
+  tagMap = addTag(tagMap, node.id, value);
+  await saveTags();
+  await refresh();
+}
+
+function openTagEditor(node, tagBar, addTagBtn) {
+  addTagBtn.remove();
+
+  const editor = document.createElement('span');
+  editor.className = 'tag-editor';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'tag-input';
+  input.placeholder = 'tag…';
+  const listId = `tags-${node.id}`;
+  input.setAttribute('list', listId);
+
+  const datalist = document.createElement('datalist');
+  datalist.id = listId;
+  for (const { tag } of allTags(tagMap)) {
+    if (tagsFor(tagMap, node.id).includes(tag)) continue;
+    const opt = document.createElement('option');
+    opt.value = tag;
+    datalist.appendChild(opt);
+  }
+
+  input.addEventListener('keydown', async e => {
+    if (e.key === 'Enter' && input.value.trim()) {
+      await commitTag(node, input.value);
+    } else if (e.key === 'Escape') {
+      await refresh();
+    }
+  });
+
+  const suggestBtn = document.createElement('button');
+  suggestBtn.className = 'tag-suggest';
+  suggestBtn.textContent = '✨ Suggest';
+  suggestBtn.addEventListener('click', async () => {
+    suggestBtn.disabled = true;
+    suggestBtn.textContent = '…';
+    const existing = allTags(tagMap).map(t => t.tag);
+    const tags = await suggestTags(node, existing, { createSession: defaultSessionFactory });
+    suggestBtn.remove();
+    if (tags.length === 0) {
+      const none = document.createElement('span');
+      none.className = 'tag-none';
+      none.textContent = '(no AI suggestions)';
+      editor.appendChild(none);
+      return;
+    }
+    for (const tag of tags) {
+      if (tagsFor(tagMap, node.id).includes(tag)) continue;
+      const chip = document.createElement('button');
+      chip.className = 'tag-suggestion';
+      chip.textContent = `+ ${tag}`;
+      chip.addEventListener('click', async () => { await commitTag(node, tag); });
+      editor.appendChild(chip);
+    }
+  });
+
+  editor.append(input, datalist, suggestBtn);
+  tagBar.appendChild(editor);
+  input.focus();
 }
 
 async function applySort(folderId, mode) {
