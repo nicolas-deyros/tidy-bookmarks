@@ -1,6 +1,6 @@
 import { sortChildren, SORT_MODES } from '../src/sorting.js';
 import { isSafeUrl, faviconParams } from '../src/url-utils.js';
-import { flattenBookmarks, listFolders, findEmptyFolders } from '../src/tree.js';
+import { flattenBookmarks, listFolders, findEmptyFolders, countContents } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
 import { findDuplicates, findMergeableFolders } from '../src/suggestions.js';
 import { suggestFolder, suggestTags, suggestReorg, defaultSessionFactory } from '../src/ai.js';
@@ -186,6 +186,43 @@ async function applySort(folderId, mode) {
 const suggestionsOutput = document.getElementById('suggestions-output');
 const analyzeBtn = document.getElementById('run-suggestions');
 
+function confirmModal(title, body) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const box = document.createElement('div');
+    box.className = 'modal-box';
+    const h = document.createElement('h3');
+    h.textContent = title;
+    const p = document.createElement('p');
+    p.textContent = body;
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    const cancel = document.createElement('button');
+    cancel.textContent = 'Cancel';
+    const confirm = document.createElement('button');
+    confirm.textContent = 'Delete';
+    confirm.className = 'danger';
+
+    function onKey(e) { if (e.key === 'Escape') close(false); }
+    function close(result) {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    cancel.addEventListener('click', () => close(false));
+    confirm.addEventListener('click', () => close(true));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(false); });
+    document.addEventListener('keydown', onKey);
+
+    actions.append(cancel, confirm);
+    box.append(h, p, actions);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    confirm.focus();
+  });
+}
+
 function addSuggestion(text, actionLabel, action) {
   const div = document.createElement('div');
   div.className = 'suggestion';
@@ -197,7 +234,8 @@ function addSuggestion(text, actionLabel, action) {
     btn.textContent = actionLabel;
     btn.addEventListener('click', async () => {
       btn.disabled = true;
-      await action();
+      const applied = await action();
+      if (applied === false) { btn.disabled = false; return; }
       div.remove();
       await refresh();
     });
@@ -218,17 +256,31 @@ analyzeBtn.addEventListener('click', async () => {
     for (const group of findDuplicates(flat)) {
       const extras = group.slice(1);
       addSuggestion(
-        `Duplicate: "${group[0].title}" appears ${group.length} times.`,
+        `Duplicate: "${group[0].title}" appears ${group.length} times (keeps 1, removes ${extras.length}).`,
         `Remove ${extras.length} duplicate(s)`,
-        async () => { for (const b of extras) await chrome.bookmarks.remove(b.id); }
+        async () => {
+          const ok = await confirmModal(
+            'Remove duplicates?',
+            `Permanently removes ${extras.length} duplicate bookmark(s), keeping one copy. This can't be undone.`
+          );
+          if (!ok) return false;
+          for (const b of extras) await chrome.bookmarks.remove(b.id);
+        }
       );
     }
 
     for (const folder of findEmptyFolders(tree)) {
       addSuggestion(
-        `Empty folder: "${folder.title}".`,
+        `Empty folder: "${folder.title}" (0 bookmarks).`,
         'Delete folder',
-        async () => { await chrome.bookmarks.remove(folder.id); }
+        async () => {
+          const ok = await confirmModal(
+            'Delete empty folder?',
+            `Deletes the empty folder "${folder.title}". This can't be undone.`
+          );
+          if (!ok) return false;
+          await chrome.bookmarks.remove(folder.id);
+        }
       );
     }
 
@@ -237,10 +289,16 @@ analyzeBtn.addEventListener('click', async () => {
       const mergeable = group.filter(f => !rootIdsForMerge.has(f.id));
       if (mergeable.length < 2) continue;
       const [target, ...rest] = mergeable;
+      const movedCount = rest.reduce((n, f) => n + countContents(f).bookmarks, 0);
       addSuggestion(
-        `Merge ${mergeable.length} folders named "${target.title}" into one.`,
+        `Merge ${mergeable.length} folders named "${target.title}" — moves ${movedCount} bookmark(s), deletes ${rest.length} folder(s).`,
         'Merge folders',
         async () => {
+          const ok = await confirmModal(
+            'Merge folders?',
+            `Moves ${movedCount} bookmark(s) into "${target.title}" and deletes ${rest.length} now-empty folder(s). This can't be undone.`
+          );
+          if (!ok) return false;
           for (const folder of rest) {
             const [sub] = await chrome.bookmarks.getSubTree(folder.id);
             for (const child of sub.children ?? []) {
