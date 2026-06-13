@@ -1,6 +1,6 @@
-body { width: 320px; margin: 0; padding: 8px; font: 13px system-ui, sans-serif; color: var(--text); background: var(--bg); }
+body { width: 320px; height: 100vh; max-height: 580px; box-sizing: border-box; margin: 0; padding: 8px; display: flex; flex-direction: column; font: 13px system-ui, sans-serif; color: var(--text); background: var(--bg); }
 #search { width: 100%; box-sizing: border-box; padding: 6px; margin-bottom: 6px; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-#results { list-style: none; margin: 0 0 6px; padding: 0; max-height: min(70vh, 480px); overflow-y: auto; }
+#results { list-style: none; margin: 0 0 6px; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 #results li { padding: 4px 2px; border-bottom: 1px solid var(--border); }
 #results a { color: var(--link); text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #results .path { color: var(--text-soft); font-size: 11px; }
