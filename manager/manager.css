@@ -71,3 +71,10 @@ header h1 { font-size: 18px; margin: 0; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .modal-actions button { padding: 6px 14px; cursor: pointer; }
 .modal-actions .danger { background: var(--danger); color: #fff; border: none; border-radius: 4px; }
+.reorg-box { max-width: 460px; }
+.reorg-picker { margin-bottom: 12px; }
+.reorg-preview { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.reorg-group { display: flex; align-items: center; gap: 8px; border: 0.5px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+.reorg-group-title { font-weight: 500; }
+.undo-bar { display: flex; align-items: center; gap: 10px; background: var(--bg-sel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
+.undo-bar button { cursor: pointer; }

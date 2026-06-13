@@ -161,3 +161,36 @@ describe('suggestReorg', () => {
     expect(await suggestReorg('Misc', reorgBookmarks, { createSession: null })).toEqual([]);
   });
 });
+
+import { buildMethodologyPrompt, suggestMethodologyPlan } from '../src/ai.js';
+
+const methBks = [
+  { id: 'b1', title: 'GitHub repo', url: 'https://github.com/x' },
+  { id: 'b2', title: 'Pasta recipe', url: 'https://food.com/p' }
+];
+
+describe('buildMethodologyPrompt', () => {
+  it('names the methodology, lists numbered bookmarks, and asks for grouped lines', () => {
+    const p = buildMethodologyPrompt('para', 'Misc', methBks);
+    expect(p).toContain('Projects');
+    expect(p).toContain('1. GitHub repo');
+    expect(p).toContain('2. Pasta recipe');
+  });
+  it('uses numbered-category guidance for johnny-decimal', () => {
+    expect(buildMethodologyPrompt('johnny-decimal', 'Misc', methBks)).toContain('number');
+  });
+});
+
+describe('suggestMethodologyPlan', () => {
+  it('returns validated groups from the model', async () => {
+    const fakeSession = { prompt: async () => 'Projects: 1\nResources: 2', destroy: () => {} };
+    const groups = await suggestMethodologyPlan('para', 'Misc', methBks, { createSession: async () => fakeSession });
+    expect(groups).toEqual([
+      { name: 'Projects', bookmarkIds: ['b1'] },
+      { name: 'Resources', bookmarkIds: ['b2'] }
+    ]);
+  });
+  it('returns [] when no session factory is available', async () => {
+    expect(await suggestMethodologyPlan('topic', 'Misc', methBks, { createSession: null })).toEqual([]);
+  });
+});

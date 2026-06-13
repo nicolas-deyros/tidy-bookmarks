@@ -1,6 +1,7 @@
 import { domainOf } from './url-utils.js';
 import { suggestFolderByRules } from './suggestions.js';
 import { sanitizeTag } from './tags.js';
+import { parseMethodologyPlan } from './reorg.js';
 
 export function buildPrompt(bookmark, folders) {
   const names = folders.map(f => f.title).join(', ');
@@ -162,6 +163,40 @@ export async function suggestReorg(folderTitle, bookmarks, { createSession } = {
     }
   } catch (err) {
     console.warn('AI reorg suggestion failed:', err);
+  } finally {
+    try { session?.destroy?.(); } catch { /* ignore a misbehaving session */ }
+  }
+  return [];
+}
+
+const METHODOLOGY_GUIDANCE = {
+  topic: 'Group them into 2-5 topical subfolders with short descriptive names.',
+  para: 'Classify each into exactly one of these folders: Projects, Areas, Resources, Archive.',
+  'johnny-decimal': 'Propose 2-5 numbered categories like "10 Finance", "20 Dev" (each name starts with a number).'
+};
+
+export function buildMethodologyPrompt(methodology, folderTitle, bookmarks) {
+  const lines = bookmarks.map((b, i) => `${i + 1}. ${b.title} (${domainOf(b.url)})`).join('\n');
+  return [
+    `Organize the bookmarks in the folder "${folderTitle}".`,
+    METHODOLOGY_GUIDANCE[methodology] ?? METHODOLOGY_GUIDANCE.topic,
+    'Bookmarks:',
+    lines,
+    'Reply with one line per group as "Group name: 1, 3, 5" using the numbers above. Use only those numbers. Nothing else.'
+  ].join('\n');
+}
+
+export async function suggestMethodologyPlan(methodology, folderTitle, bookmarks, { createSession } = {}) {
+  if (!createSession) return [];
+  let session = null;
+  try {
+    session = await createSession();
+    if (session) {
+      const response = await session.prompt(buildMethodologyPrompt(methodology, folderTitle, bookmarks));
+      return parseMethodologyPlan(response, bookmarks);
+    }
+  } catch (err) {
+    console.warn('AI methodology plan failed:', err);
   } finally {
     try { session?.destroy?.(); } catch { /* ignore a misbehaving session */ }
   }
