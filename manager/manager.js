@@ -111,4 +111,12 @@ themeSelect.addEventListener('change', async () => {
   await chrome.storage.local.set({ theme: themeSelect.value });
 });
 
+document.addEventListener('keydown', e => {
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if (e.key === '/') { e.preventDefault(); searchEl.focus(); }
+  else if (e.key === 'b') showBrowse();
+  else if (e.key === 's') showSuggestions();
+});
+
 refresh().catch(err => { contentsEl.textContent = `Failed to load bookmarks: ${err.message}`; });
