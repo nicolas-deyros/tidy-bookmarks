@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planFlat, planByRecency } from '../src/reorg.js';
+import { planFlat, planByRecency, recommendMethodology } from '../src/reorg.js';
 
 const now = Date.UTC(2026, 0, 31); // 2026-01-31
 const day = 86400000;
@@ -29,5 +29,23 @@ describe('planByRecency', () => {
   it('omits empty buckets', () => {
     const onlyFresh = [{ id: 'a', url: 'https://a.com', dateAdded: now }];
     expect(planByRecency(onlyFresh, now)).toEqual([{ name: 'Recent', bookmarkIds: ['a'] }]);
+  });
+});
+
+describe('recommendMethodology', () => {
+  it('recommends topic when domains are highly varied', () => {
+    const varied = Array.from({ length: 10 }, (_, i) => ({ id: String(i), url: `https://site${i}.com` }));
+    expect(recommendMethodology(varied)).toBe('topic');
+  });
+  it('recommends recency for a small set', () => {
+    const few = [{ id: '1', url: 'https://a.com' }, { id: '2', url: 'https://a.com' }];
+    expect(recommendMethodology(few)).toBe('recency');
+  });
+  it('recommends para for a larger mixed set with repeated domains', () => {
+    const mixed = Array.from({ length: 12 }, (_, i) => ({ id: String(i), url: `https://site${i % 3}.com` }));
+    expect(recommendMethodology(mixed)).toBe('para');
+  });
+  it('defaults to flat for an empty folder', () => {
+    expect(recommendMethodology([])).toBe('flat');
   });
 });

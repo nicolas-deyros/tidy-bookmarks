@@ -1,3 +1,5 @@
+import { domainOf } from './url-utils.js';
+
 const DAY = 86400000;
 
 export function planFlat(bookmarks) {
@@ -16,4 +18,13 @@ export function planByRecency(bookmarks, now) {
   return ['Recent', 'Older', 'Archive']
     .filter(name => buckets[name].length > 0)
     .map(name => ({ name, bookmarkIds: buckets[name] }));
+}
+
+export function recommendMethodology(bookmarks) {
+  const n = bookmarks.length;
+  if (n === 0) return 'flat';
+  if (n <= 5) return 'recency';
+  const domains = new Set(bookmarks.filter(b => b.url).map(b => domainOf(b.url)));
+  const variety = domains.size / n;
+  return variety >= 0.8 ? 'topic' : 'para';
 }
