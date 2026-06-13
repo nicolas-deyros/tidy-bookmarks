@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bookmark Organizer</title>
+  <link rel="stylesheet" href="manager.css">
+</head>
+<body>
+  <header>
+    <h1>Bookmark Organizer</h1>
+    <input id="search" type="search" placeholder="Search by topic, title, or URL…">
+  </header>
+  <main>
+    <section id="suggestions-panel">
+      <h2>Suggestions</h2>
+      <button id="run-suggestions">Analyze bookmarks</button>
+      <div id="suggestions-output"></div>
+    </section>
+    <section id="tree-panel">
+      <h2>Bookmarks</h2>
+      <div id="tree"></div>
+    </section>
+  </main>
+  <script type="module" src="manager.js"></script>
+</body>
+</html>

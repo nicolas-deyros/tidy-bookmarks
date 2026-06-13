@@ -1,0 +1,7 @@
+body { width: 320px; margin: 0; padding: 8px; font: 13px system-ui, sans-serif; }
+#search { width: 100%; box-sizing: border-box; padding: 6px; margin-bottom: 6px; }
+#results { list-style: none; margin: 0 0 6px; padding: 0; max-height: 320px; overflow-y: auto; }
+#results li { padding: 4px 2px; border-bottom: 1px solid #eee; }
+#results a { color: #1a56b0; text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#results .path { color: #888; font-size: 11px; }
+#open-manager { width: 100%; padding: 6px; cursor: pointer; }
