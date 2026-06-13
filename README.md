@@ -20,3 +20,6 @@ on-device AI folder suggestions (Chrome Built-in AI / Gemini Nano).
 - Local tags with one-click AI tag suggestions.
 - Cleanup: duplicate detection, empty-folder removal, same-name folder merge.
 - AI folder suggestions and per-folder reorganization into subfolders.
+- Confirm-before-delete modal showing exactly what each deletion affects.
+- Inline tag editor with autocomplete from your existing tags and on-device AI tag suggestions.
+- Generated extension icon; viewport-aware layout.
