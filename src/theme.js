@@ -1,11 +1,6 @@
 export const THEMES = ['quiet', 'vivid', 'deck'];
 export const APPEARANCES = ['light', 'dark', 'system'];
-export const DEFAULT_PREF = { theme: 'quiet', appearance: 'system' };
-
-export function resolveAppearance(setting, prefersDark) {
-  if (setting === 'light' || setting === 'dark') return setting;
-  return prefersDark ? 'dark' : 'light';
-}
+const DEFAULT_PREF = { theme: 'quiet', appearance: 'system' };
 
 export function normalizeThemePref(pref = {}) {
   return {
