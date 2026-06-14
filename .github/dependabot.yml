@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Dev dependencies (eslint, vitest). The extension ships zero runtime deps.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
+
+  # Keep GitHub Actions pinned-SHAs current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

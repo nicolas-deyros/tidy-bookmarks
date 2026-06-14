@@ -49,7 +49,7 @@ export function parseSuggestion(response, folders) {
 
 // Default factory: Chrome built-in Prompt API (on-device Gemini Nano).
 // Returns null when unavailable so callers fall back to rules.
-export async function defaultSessionFactory() {
+export async function defaultSessionFactory({ onDownloadProgress } = {}) {
   if (typeof LanguageModel === 'undefined') return null;
   // Declaring expected input/output language lets Chrome attest output safety
   // and silences the "No output language was specified" warning.
@@ -57,9 +57,20 @@ export async function defaultSessionFactory() {
     expectedInputs: [{ type: 'text', languages: ['en'] }],
     expectedOutputs: [{ type: 'text', languages: ['en'] }]
   };
-  const availability = await LanguageModel.availability(options);
+  let availability;
+  try {
+    availability = await LanguageModel.availability(options);
+  } catch {
+    return null;
+  }
   if (availability === 'unavailable') return null;
-  return LanguageModel.create(options);
+  const createOptions = { ...options };
+  // First use may download the model (hundreds of MB). Surface progress so the
+  // UI doesn't look frozen.
+  if (onDownloadProgress) {
+    createOptions.monitor = m => m.addEventListener('downloadprogress', e => onDownloadProgress(e));
+  }
+  return LanguageModel.create(createOptions);
 }
 
 export async function suggestFolder(bookmark, folders, { createSession } = {}) {
@@ -165,6 +176,48 @@ export async function suggestReorg(folderTitle, bookmarks, { createSession } = {
     console.warn('AI reorg suggestion failed:', err);
   } finally {
     try { session?.destroy?.(); } catch { /* ignore a misbehaving session */ }
+  }
+  return [];
+}
+
+export function buildSimilarFoldersPrompt(folderTitles) {
+  return [
+    'These are browser bookmark folder names. Group together the ones that mean the same topic.',
+    `Folders: ${folderTitles.join(', ')}`,
+    'Reply with one group per line as comma-separated names, e.g. "Dev, Coding".',
+    'Only include folders that have at least one match. Use the exact names. Nothing else.'
+  ].join('\n');
+}
+
+// Untrusted output: every name must match a real folder title (allowlist); groups need 2+.
+export function parseSimilarFolders(response, folderTitles) {
+  if (typeof response !== 'string') return [];
+  const allow = new Map(folderTitles.map(t => [t.toLowerCase(), t]));
+  const groups = [];
+  for (const line of response.split('\n')) {
+    const names = [];
+    for (const part of line.split(',')) {
+      const real = allow.get(part.trim().toLowerCase());
+      if (real && !names.includes(real)) names.push(real);
+    }
+    if (names.length >= 2) groups.push(names);
+  }
+  return groups;
+}
+
+export async function suggestSimilarFolders(folderTitles, { createSession } = {}) {
+  if (!createSession || folderTitles.length < 2) return [];
+  let session = null;
+  try {
+    session = await createSession();
+    if (session) {
+      const response = await session.prompt(buildSimilarFoldersPrompt(folderTitles));
+      return parseSimilarFolders(response, folderTitles);
+    }
+  } catch (err) {
+    console.warn('AI similar-folder suggestion failed:', err);
+  } finally {
+    try { session?.destroy?.(); } catch { /* ignore */ }
   }
   return [];
 }

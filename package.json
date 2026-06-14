@@ -1,6 +1,6 @@
 {
-  "name": "bookmark-organizer",
-  "version": "0.1.0",
+  "name": "tidy-bookmarks",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -15,6 +15,6 @@
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "eslint": "^9.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.8"
   }
 }

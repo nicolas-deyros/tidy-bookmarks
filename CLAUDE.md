@@ -1,4 +1,4 @@
-# Bookmark Organizer — Chrome Extension
+# Tidy Bookmarks — Chrome Extension
 
 Manifest V3 extension that organizes the user's bookmarks: search, sort, move, duplicate/empty-folder cleanup, and on-device AI folder suggestions.
 

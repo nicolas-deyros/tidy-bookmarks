@@ -6,7 +6,14 @@ import { addTag, removeTag, tagsFor, allTags } from '../src/tags.js';
 import { suggestTags, defaultSessionFactory } from '../src/ai.js';
 import { openReorg, renderUndoBar } from './reorg-view.js';
 
-const SORT_LABELS = { alphabetical: 'A–Z', dateAdded: 'Newest first', domain: 'By domain' };
+const SORT_LABELS = {
+  alphabetical: 'A–Z',
+  alphabeticalDesc: 'Z–A',
+  dateAdded: 'Newest first',
+  dateAddedAsc: 'Oldest first',
+  domain: 'By domain',
+  url: 'By URL'
+};
 
 export function renderContents(container, ctx) {
   container.replaceChildren();
@@ -194,9 +201,26 @@ function openTagEditor(node, bar, addBtn, ctx) {
   const suggestBtn = document.createElement('button');
   suggestBtn.className = 'tag-suggest'; suggestBtn.textContent = '✨ Suggest';
   suggestBtn.addEventListener('click', async () => {
-    suggestBtn.disabled = true; suggestBtn.textContent = '…';
+    suggestBtn.disabled = true; suggestBtn.textContent = 'thinking…';
+    const note = msg => {
+      suggestBtn.remove();
+      const none = document.createElement('span'); none.className = 'tag-none'; none.textContent = msg;
+      editor.appendChild(none);
+    };
     const existing = allTags(ctx.getTagMap()).map(t => t.tag);
-    const tags = await suggestTags(node, existing, { createSession: defaultSessionFactory });
+    let tags = [];
+    try {
+      // Warm up the model first so a first-run download shows progress on the button.
+      const session = await defaultSessionFactory({
+        onDownloadProgress: e => { suggestBtn.textContent = `model ${Math.round((e.loaded ?? 0) * 100)}%`; }
+      });
+      if (!session) { note('(on-device AI unavailable)'); return; }
+      try { session.destroy?.(); } catch { /* ignore */ }
+      suggestBtn.textContent = 'thinking…';
+      tags = await suggestTags(node, existing, { createSession: defaultSessionFactory });
+    } catch (err) {
+      note(`(AI error: ${err.message})`); return;
+    }
     suggestBtn.remove();
     if (tags.length === 0) {
       const none = document.createElement('span'); none.className = 'tag-none'; none.textContent = '(no AI suggestions)';

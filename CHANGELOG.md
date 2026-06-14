@@ -1,6 +1,28 @@
 # Changelog
 
-All notable changes to Bookmark Organizer. Format based on [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning. Everything runs on-device — no network, no tracking.
+All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning. Everything runs on-device — no network, no tracking.
+
+## [0.5.0] — 2026-06-14
+
+### Added
+- Three switchable themes — **Quiet**, **Vivid**, **Deck** — each with **Light / Dark / System** appearance (6 token-driven palettes in `theme.css`). New header controls; the popup and side panel inherit the choice.
+- **Health** dashboard replaces the old Suggestions tab: a prioritized, folder-scoped view split into **instant on-device cleanup** and **on-demand on-device AI**. Drill into a card, batch-select, and apply; destructive actions still confirm.
+- New cleanup checks: **near-duplicates** (same page differing only by tracking params / trailing slash / www / scheme), **single-item folders**, and **stale bookmarks** (by `dateAdded`, no history/network) — alongside the existing duplicate, empty-folder, and same-name-folder checks.
+- New AI check: **similar-topic folders** (merges folders that mean the same thing, e.g. Dev/Coding), with output validated against the real-folder allowlist.
+- More per-folder **sort options**: A–Z, Z–A, Newest first, Oldest first, By domain, By URL.
+- Health **scope picker** is now an indented folder tree (roots included), each folder labelled by its own name — no more repeated entries.
+- On-device AI scans now show a **loading spinner, model-download percentage, and per-item progress**, plus a clear message when the built-in model is unavailable. Same feedback added to the inline "✨ Suggest" tag button.
+- **Keyboard navigation** in the popup / side panel: ↓/↑ move through results, Enter opens the highlighted (or top) hit, Esc clears the search.
+
+### Changed
+- **Renamed** to *Tidy Bookmarks — Private AI Organizer* (npm package `tidy-bookmarks`).
+- New pure modules `src/theme.js` and `src/health.js`; new functions `looseNormalizeUrl`, `findNearDuplicates`, `findStaleBookmarks`, `findSingleItemFolders`, and AI `suggestSimilarFolders` — all unit-tested.
+- `manager/suggestions-view.js` replaced by `manager/health-view.js`.
+- Existing `light/dark/auto` theme preference is migrated automatically on first load.
+
+### Security
+- Upgraded the dev toolchain (vitest 4) to clear all `npm audit` advisories — **0 vulnerabilities**. The extension still ships **zero runtime dependencies**.
+- Reaffirmed 100% on-device: no network, no host permissions, no new permissions. Live-link/404 checking was considered and deliberately rejected to preserve the privacy guarantee.
 
 ## [0.4.1] — 2026-06-13
 

@@ -24,6 +24,16 @@ export function listFolders(tree) {
   return out;
 }
 
+// Every folder (including the permanent roots) in pre-order, with its own title
+// and nesting depth — for an indented folder picker. depth 1 = a permanent root.
+export function folderChoices(tree) {
+  const out = [];
+  walk(tree, [], (node, _path, depth) => {
+    if (depth >= 1 && !node.url && node.title) out.push({ id: node.id, title: node.title, depth });
+  });
+  return out;
+}
+
 export function findEmptyFolders(tree) {
   const out = [];
   // depth 0 = the absolute root; depth 1 = Chrome's permanent root folders
@@ -31,6 +41,17 @@ export function findEmptyFolders(tree) {
   // user-created folders are eligible for an "empty folder" suggestion.
   walk(tree, [], (node, _path, depth) => {
     if (depth > 1 && !node.url && node.title && node.children && node.children.length === 0) out.push(node);
+  });
+  return out;
+}
+
+// Non-root folders holding exactly one bookmark and no subfolders — usually clutter.
+export function findSingleItemFolders(tree) {
+  const out = [];
+  walk(tree, [], (node, _path, depth) => {
+    if (depth <= 1 || node.url || !node.title || !node.children) return;
+    const children = node.children;
+    if (children.length === 1 && children[0].url) out.push(node);
   });
   return out;
 }

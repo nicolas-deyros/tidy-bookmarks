@@ -1,7 +1,15 @@
-body { width: 320px; height: 100vh; max-height: 580px; box-sizing: border-box; margin: 0; padding: 8px; display: flex; flex-direction: column; font: 13px system-ui, sans-serif; color: var(--text); background: var(--bg); }
-#search { width: 100%; box-sizing: border-box; padding: 6px; margin-bottom: 6px; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-#results { list-style: none; margin: 0 0 6px; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-#results li { padding: 4px 2px; border-bottom: 1px solid var(--border); }
-#results a { color: var(--link); text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* width:100% lets the side panel stretch; min-width gives the action popup a
+   real width (popups size to content, so width:100% alone collapses them). */
+body { width: 100%; min-width: 340px; height: 100vh; box-sizing: border-box; margin: 0; padding: 10px; display: flex; flex-direction: column; font: 13px system-ui, sans-serif; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+#search { width: 100%; box-sizing: border-box; padding: 7px 10px; margin-bottom: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); }
+#status { display: flex; gap: 8px; margin-bottom: 8px; }
+#results { list-style: none; margin: 0 0 8px; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+#results li { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+#results a { color: var(--link); text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; }
+#results a:focus, #results a:focus-visible { background: var(--bg-sel); outline: 2px solid var(--accent); outline-offset: -2px; }
 #results .path { color: var(--text-soft); font-size: 11px; }
-#open-manager, #open-sidebar { width: 100%; padding: 6px; cursor: pointer; margin-top: 4px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; }
+#open-manager, #open-sidebar { flex: 1; min-width: 0; padding: 7px; cursor: pointer; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); }
+#open-manager:hover, #open-sidebar:hover { background: var(--bg-soft); }
+:root[data-theme="deck"] #results a { font-family: var(--font-mono); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

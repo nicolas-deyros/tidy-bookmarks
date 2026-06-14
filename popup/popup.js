@@ -1,6 +1,7 @@
 import { flattenBookmarks } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
 import { isSafeUrl, faviconParams } from '../src/url-utils.js';
+import { applyTheme, normalizeThemePref, migrateLegacyTheme } from '../src/theme.js';
 
 const input = document.getElementById('search');
 const results = document.getElementById('results');
@@ -8,11 +9,12 @@ let flat = [];
 let tagMap = {};
 
 async function init() {
+  // Apply theme first (before the slower bookmark fetch) to avoid any flash.
+  const { tags = {}, themePref, theme } = await chrome.storage.local.get(['tags', 'themePref', 'theme']);
+  tagMap = tags;
+  applyTheme(document.documentElement, themePref ? normalizeThemePref(themePref) : migrateLegacyTheme(theme));
   const tree = await chrome.bookmarks.getTree();
   flat = flattenBookmarks(tree);
-  const { tags = {}, theme = 'auto' } = await chrome.storage.local.get(['tags', 'theme']);
-  tagMap = tags;
-  document.documentElement.dataset.theme = theme;
 }
 
 function render(matches) {
@@ -48,6 +50,29 @@ function render(matches) {
 }
 
 input.addEventListener('input', () => render(searchBookmarks(flat, input.value, tagMap)));
+
+const resultLinks = () => [...results.querySelectorAll('a')];
+
+// From the search box: ↓ steps into results, Enter opens the top hit, Esc clears.
+input.addEventListener('keydown', e => {
+  const links = resultLinks();
+  if (e.key === 'ArrowDown') { e.preventDefault(); links[0]?.focus(); }
+  else if (e.key === 'Enter') { e.preventDefault(); links[0]?.click(); }
+  else if (e.key === 'Escape' && input.value) { e.preventDefault(); input.value = ''; render(searchBookmarks(flat, '', tagMap)); }
+});
+
+// Within results: ↑/↓ move between hits (↑ at the top returns to search), Esc returns.
+results.addEventListener('keydown', e => {
+  if (!['ArrowDown', 'ArrowUp', 'Escape'].includes(e.key)) return;
+  const links = resultLinks();
+  const idx = links.indexOf(document.activeElement);
+  if (idx === -1) return;
+  e.preventDefault();
+  if (e.key === 'Escape') input.focus();
+  else if (e.key === 'ArrowDown') links[Math.min(idx + 1, links.length - 1)].focus();
+  else if (idx === 0) input.focus();
+  else links[idx - 1].focus();
+});
 
 document.getElementById('open-manager').addEventListener('click', async () => {
   await chrome.tabs.create({ url: chrome.runtime.getURL('manager/manager.html') });

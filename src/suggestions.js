@@ -1,4 +1,4 @@
-import { normalizeUrl, domainOf } from './url-utils.js';
+import { normalizeUrl, domainOf, looseNormalizeUrl } from './url-utils.js';
 
 export function findDuplicates(flat) {
   const byUrl = new Map();
@@ -8,6 +8,32 @@ export function findDuplicates(flat) {
     byUrl.get(key).push(b);
   }
   return [...byUrl.values()].filter(group => group.length > 1);
+}
+
+// Same page saved more than once where the exact URLs differ only by tracking
+// params, trailing slash, www, or scheme. Exact dups belong to findDuplicates.
+export function findNearDuplicates(flat) {
+  const byLoose = new Map();
+  for (const b of flat) {
+    const key = looseNormalizeUrl(b.url);
+    if (!byLoose.has(key)) byLoose.set(key, []);
+    byLoose.get(key).push(b);
+  }
+  return [...byLoose.values()].filter(group => {
+    if (group.length < 2) return false;
+    const exact = new Set(group.map(b => normalizeUrl(b.url)));
+    return exact.size > 1;
+  });
+}
+
+const FOUR_YEARS_MS = 4 * 365 * 24 * 60 * 60 * 1000;
+
+// Bookmarks added long ago (by dateAdded only — no history, no network), oldest first.
+export function findStaleBookmarks(flat, { now = Date.now(), thresholdMs = FOUR_YEARS_MS } = {}) {
+  const cutoff = now - thresholdMs;
+  return flat
+    .filter(b => typeof b.dateAdded === 'number' && b.dateAdded < cutoff)
+    .sort((a, b) => a.dateAdded - b.dateAdded);
 }
 
 export function suggestFolderByRules(bookmark, folders) {

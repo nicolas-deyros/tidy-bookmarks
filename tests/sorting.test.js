@@ -22,12 +22,24 @@ describe('sortChildren', () => {
     const ids = sortChildren(children, 'domain').map(n => n.id);
     expect(ids).toEqual(['f2', 'f1', 'a', 'c', 'b']);
   });
+  it('sorts links Z–A (reverse alphabetical)', () => {
+    const ids = sortChildren(children, 'alphabeticalDesc').map(n => n.id);
+    expect(ids).toEqual(['f2', 'f1', 'b', 'c', 'a']);
+  });
+  it('sorts links oldest-first by dateAdded', () => {
+    const ids = sortChildren(children, 'dateAddedAsc').map(n => n.id);
+    expect(ids).toEqual(['f2', 'f1', 'a', 'c', 'b']);
+  });
+  it('sorts links by full URL', () => {
+    const ids = sortChildren(children, 'url').map(n => n.id);
+    expect(ids).toEqual(['f2', 'f1', 'c', 'a', 'b']);
+  });
   it('does not mutate the input array', () => {
     const copy = [...children];
     sortChildren(children, 'alphabetical');
     expect(children).toEqual(copy);
   });
   it('exposes the available modes', () => {
-    expect(SORT_MODES).toEqual(['alphabetical', 'dateAdded', 'domain']);
+    expect(SORT_MODES).toEqual(['alphabetical', 'alphabeticalDesc', 'dateAdded', 'dateAddedAsc', 'domain', 'url']);
   });
 });
