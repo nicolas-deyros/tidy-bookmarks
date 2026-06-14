@@ -21,7 +21,7 @@ export function openHelp() {
   box.className = 'modal-box help-box';
 
   const h = document.createElement('h3');
-  h.textContent = 'Bookmark Organizer — help';
+  h.textContent = 'Tidy Bookmarks — help';
   box.appendChild(h);
 
   const fTitle = document.createElement('p');

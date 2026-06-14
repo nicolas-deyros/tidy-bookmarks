@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Bookmark Organizer. Format based on [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning. Everything runs on-device — no network, no tracking.
+All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning. Everything runs on-device — no network, no tracking.
 
 ## [0.5.0] — 2026-06-14
 

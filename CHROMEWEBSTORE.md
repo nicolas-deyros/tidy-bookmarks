@@ -1,4 +1,4 @@
-# Chrome Web Store Listing — Bookmark Organizer
+# Chrome Web Store Listing — Tidy Bookmarks
 
 **Last Updated:** 2026-06-14
 **Version:** 0.5.0

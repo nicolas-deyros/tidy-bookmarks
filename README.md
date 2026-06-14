@@ -1,4 +1,4 @@
-# Bookmark Organizer
+# Tidy Bookmarks — Private AI Organizer
 
 Chrome extension to search, sort, and reorganize your bookmarks, with private
 on-device AI folder suggestions (Chrome Built-in AI / Gemini Nano).

@@ -14,7 +14,7 @@ disclosure.
 
 ## Security model
 
-Bookmark Organizer is designed to be private by construction:
+Tidy Bookmarks is designed to be private by construction:
 
 - **Local-only.** Permissions are limited to `bookmarks`, `storage`, `favicon`,
   and `sidePanel`. There are **no host permissions** and the extension makes
