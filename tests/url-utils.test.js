@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSafeUrl, normalizeUrl, domainOf, faviconParams } from '../src/url-utils.js';
+import { isSafeUrl, normalizeUrl, domainOf, faviconParams, looseNormalizeUrl } from '../src/url-utils.js';
 
 describe('isSafeUrl', () => {
   it('accepts http and https', () => {
@@ -33,6 +33,23 @@ describe('domainOf', () => {
   it('returns empty string for invalid input', () => {
     expect(domainOf('nope')).toBe('');
     expect(domainOf(undefined)).toBe('');
+  });
+});
+
+describe('looseNormalizeUrl', () => {
+  it('drops scheme, www, trailing slash and lowercases host', () => {
+    expect(looseNormalizeUrl('https://www.Example.com/Page/'))
+      .toBe(looseNormalizeUrl('http://example.com/Page'));
+  });
+  it('strips tracking params but keeps meaningful ones', () => {
+    expect(looseNormalizeUrl('https://x.com/a?utm_source=nl&id=7&fbclid=z'))
+      .toBe(looseNormalizeUrl('https://x.com/a?id=7'));
+  });
+  it('preserves path case and distinct pages', () => {
+    expect(looseNormalizeUrl('https://x.com/a')).not.toBe(looseNormalizeUrl('https://x.com/b'));
+  });
+  it('returns input unchanged when not a URL', () => {
+    expect(looseNormalizeUrl('not a url')).toBe('not a url');
   });
 });
 
