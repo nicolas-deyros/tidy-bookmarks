@@ -5,8 +5,11 @@ const byTitle = (a, b) =>
 
 const COMPARATORS = {
   alphabetical: byTitle,
+  alphabeticalDesc: (a, b) => byTitle(b, a),
   dateAdded: (a, b) => (b.dateAdded ?? 0) - (a.dateAdded ?? 0),
-  domain: (a, b) => domainOf(a.url).localeCompare(domainOf(b.url)) || byTitle(a, b)
+  dateAddedAsc: (a, b) => (a.dateAdded ?? 0) - (b.dateAdded ?? 0),
+  domain: (a, b) => domainOf(a.url).localeCompare(domainOf(b.url)) || byTitle(a, b),
+  url: (a, b) => (a.url || '').localeCompare(b.url || '') || byTitle(a, b)
 };
 
 export const SORT_MODES = Object.keys(COMPARATORS);

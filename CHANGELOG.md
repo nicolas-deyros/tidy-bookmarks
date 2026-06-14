@@ -9,6 +9,8 @@ All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https:
 - **Health** dashboard replaces the old Suggestions tab: a prioritized, folder-scoped view split into **instant on-device cleanup** and **on-demand on-device AI**. Drill into a card, batch-select, and apply; destructive actions still confirm.
 - New cleanup checks: **near-duplicates** (same page differing only by tracking params / trailing slash / www / scheme), **single-item folders**, and **stale bookmarks** (by `dateAdded`, no history/network) — alongside the existing duplicate, empty-folder, and same-name-folder checks.
 - New AI check: **similar-topic folders** (merges folders that mean the same thing, e.g. Dev/Coding), with output validated against the real-folder allowlist.
+- More per-folder **sort options**: A–Z, Z–A, Newest first, Oldest first, By domain, By URL.
+- Health **scope picker** is now an indented folder tree (roots included), each folder labelled by its own name — no more repeated entries.
 
 ### Changed
 - New pure modules `src/theme.js` and `src/health.js`; new functions `looseNormalizeUrl`, `findNearDuplicates`, `findStaleBookmarks`, `findSingleItemFolders`, and AI `suggestSimilarFolders` — all unit-tested.

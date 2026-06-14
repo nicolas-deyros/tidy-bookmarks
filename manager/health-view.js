@@ -1,4 +1,4 @@
-import { flattenBookmarks, listFolders, findEmptyFolders, findSingleItemFolders, countContents } from '../src/tree.js';
+import { flattenBookmarks, listFolders, findEmptyFolders, findSingleItemFolders, countContents, folderChoices } from '../src/tree.js';
 import { findDuplicates, findNearDuplicates, findMergeableFolders, findStaleBookmarks } from '../src/suggestions.js';
 import { suggestFolder, suggestTags, suggestReorg, suggestSimilarFolders, defaultSessionFactory } from '../src/ai.js';
 import { buildHealthReport } from '../src/health.js';
@@ -35,15 +35,15 @@ function bookmarkRow(b, { showUrl = true } = {}) {
 
 export async function renderHealth(container, scopeSelect, ctx) {
   const tree = await chrome.bookmarks.getTree();
-  const rootIds = new Set((tree[0]?.children ?? []).map(n => n.id));
-  const allFolders = listFolders(tree).filter(f => !rootIds.has(f.id));
 
-  // Scope picker: rebuild options, preserve current choice.
+  // Scope picker: "Everything" + an indented tree of every folder (roots included),
+  // each labelled by its own name so siblings are distinct.
   const prev = scopeSelect.value;
   scopeSelect.replaceChildren();
   scopeSelect.append(el('option', { value: '', textContent: 'Everything' }));
-  for (const f of allFolders) {
-    scopeSelect.append(el('option', { value: f.id, textContent: f.path || f.title }));
+  for (const f of folderChoices(tree)) {
+    const indent = '   '.repeat(Math.max(0, f.depth - 1));
+    scopeSelect.append(el('option', { value: f.id, textContent: indent + f.title }));
   }
   scopeSelect.value = [...scopeSelect.options].some(o => o.value === prev) ? prev : '';
   scopeSelect.onchange = () => { renderHealth(container, scopeSelect, ctx); };
@@ -248,7 +248,7 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
       row.append(favicon(b.url), el('span', { className: 'hb-title', textContent: b.title || b.url }));
       const sel = el('select', { className: 'hb-move-select' });
       sel.append(el('option', { value: '', textContent: 'Move to…' }));
-      for (const f of folders) sel.append(el('option', { value: f.id, textContent: f.path || f.title }));
+      for (const f of folders) sel.append(el('option', { value: f.id, textContent: f.path ? `${f.path} / ${f.title}` : f.title }));
       const go = el('button', { className: 'hb-btn', textContent: 'Move' });
       go.addEventListener('click', async () => {
         if (!sel.value) return;

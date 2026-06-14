@@ -6,7 +6,14 @@ import { addTag, removeTag, tagsFor, allTags } from '../src/tags.js';
 import { suggestTags, defaultSessionFactory } from '../src/ai.js';
 import { openReorg, renderUndoBar } from './reorg-view.js';
 
-const SORT_LABELS = { alphabetical: 'A–Z', dateAdded: 'Newest first', domain: 'By domain' };
+const SORT_LABELS = {
+  alphabetical: 'A–Z',
+  alphabeticalDesc: 'Z–A',
+  dateAdded: 'Newest first',
+  dateAddedAsc: 'Oldest first',
+  domain: 'By domain',
+  url: 'By URL'
+};
 
 export function renderContents(container, ctx) {
   container.replaceChildren();
