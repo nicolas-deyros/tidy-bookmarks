@@ -1,6 +1,7 @@
 import { flattenBookmarks } from '../src/tree.js';
 import { searchBookmarks } from '../src/search.js';
 import { isSafeUrl, faviconParams } from '../src/url-utils.js';
+import { applyTheme, normalizeThemePref, migrateLegacyTheme } from '../src/theme.js';
 
 const input = document.getElementById('search');
 const results = document.getElementById('results');
@@ -10,9 +11,9 @@ let tagMap = {};
 async function init() {
   const tree = await chrome.bookmarks.getTree();
   flat = flattenBookmarks(tree);
-  const { tags = {}, theme = 'auto' } = await chrome.storage.local.get(['tags', 'theme']);
+  const { tags = {}, themePref, theme } = await chrome.storage.local.get(['tags', 'themePref', 'theme']);
   tagMap = tags;
-  document.documentElement.dataset.theme = theme;
+  applyTheme(document.documentElement, themePref ? normalizeThemePref(themePref) : migrateLegacyTheme(theme));
 }
 
 function render(matches) {

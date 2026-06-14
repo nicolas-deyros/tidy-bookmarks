@@ -14,7 +14,7 @@ function scopedTree(tree, scopeId) {
   return find(tree) ?? tree;
 }
 
-export function buildHealthReport({ tree, tagMap = {}, now = Date.now(), scopeId = '' } = {}) {
+export function buildHealthReport({ tree, now = Date.now(), scopeId = '' } = {}) {
   const scope = scopedTree(tree, scopeId);
   const flat = flattenBookmarks(scope);
   const folders = listFolders(scope);

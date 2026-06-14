@@ -3,13 +3,13 @@ const FEATURES = [
   'Drag bookmarks onto folders to move them; drag bookmarks to reorder; drag folders to restructure.',
   'Tags: add with "+ tag", autocomplete from existing tags, or "✨ Suggest" for AI tags.',
   'Sort a folder with the Sort control; Reorganize a folder by methodology with preview + undo.',
-  'Suggestions tab: duplicates, empty folders, merges, and AI move/tag/reorg.',
-  'Theme: Auto / Light / Dark in the header.'
+  'Health tab: a prioritized, folder-scoped dashboard — instant cleanup (duplicates, near-duplicates, empty/single-item/same-name folders, stale & loose items) and on-demand on-device AI (file, tag, tidy, merge similar).',
+  'Theme: pick Quiet / Vivid / Deck, plus Light / Dark / System appearance, in the header.'
 ];
 const SHORTCUTS = [
   ['/', 'Focus search'],
   ['b', 'Browse view'],
-  ['s', 'Suggestions view'],
+  ['s', 'Health view'],
   ['Esc', 'Close panel / dialog'],
   ['Ctrl/Cmd+Shift+B', 'Open the extension popup (editable in chrome://extensions/shortcuts)']
 ];

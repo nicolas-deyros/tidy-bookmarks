@@ -12,13 +12,22 @@
     <input id="search" type="search" placeholder="Search by topic, title, URL, or tag…">
     <div id="view-toggle" role="tablist">
       <button id="tab-browse" role="tab" aria-selected="true">Browse</button>
-      <button id="tab-suggestions" role="tab" aria-selected="false">Suggestions</button>
+      <button id="tab-health" role="tab" aria-selected="false">Health</button>
     </div>
-    <select id="theme-select" aria-label="Theme">
-      <option value="auto">Auto</option>
-      <option value="light">Light</option>
-      <option value="dark">Dark</option>
-    </select>
+    <label class="control">Theme
+      <select id="theme-select" aria-label="Theme">
+        <option value="quiet">Quiet</option>
+        <option value="vivid">Vivid</option>
+        <option value="deck">Deck</option>
+      </select>
+    </label>
+    <label class="control">Appearance
+      <select id="appearance-select" aria-label="Appearance">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+        <option value="system">System</option>
+      </select>
+    </label>
     <button id="help-btn" aria-label="Help">?</button>
   </header>
   <main>
@@ -26,9 +35,13 @@
       <aside id="folder-rail" aria-label="Folders"></aside>
       <section id="contents" aria-label="Bookmarks"></section>
     </section>
-    <section id="suggestions-view" hidden>
-      <button id="run-suggestions">Analyze bookmarks</button>
-      <div id="suggestions-container"></div>
+    <section id="health-view" hidden>
+      <div class="health-toolbar">
+        <label class="control">Analyze
+          <select id="health-scope" aria-label="Scope to analyze"></select>
+        </label>
+      </div>
+      <div id="health-container"></div>
     </section>
   </main>
   <script type="module" src="manager.js"></script>
