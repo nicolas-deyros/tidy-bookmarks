@@ -9,11 +9,12 @@ let flat = [];
 let tagMap = {};
 
 async function init() {
-  const tree = await chrome.bookmarks.getTree();
-  flat = flattenBookmarks(tree);
+  // Apply theme first (before the slower bookmark fetch) to avoid any flash.
   const { tags = {}, themePref, theme } = await chrome.storage.local.get(['tags', 'themePref', 'theme']);
   tagMap = tags;
   applyTheme(document.documentElement, themePref ? normalizeThemePref(themePref) : migrateLegacyTheme(theme));
+  const tree = await chrome.bookmarks.getTree();
+  flat = flattenBookmarks(tree);
 }
 
 function render(matches) {
