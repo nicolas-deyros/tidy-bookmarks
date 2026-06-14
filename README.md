@@ -16,7 +16,7 @@ on-device AI folder suggestions (Chrome Built-in AI / Gemini Nano).
 
 ## Features
 - Search bookmarks by topic, title, URL, or tag (popup, side panel, and manager).
-- Per-folder sorting (A–Z, newest, by domain), move-to-folder, favicons.
+- Per-folder sorting (A–Z, Z–A, newest, oldest, by domain, by URL), move-to-folder, favicons.
 - Local tags with one-click AI tag suggestions.
 - **Health dashboard** — a prioritized, folder-scoped view of what needs tidying, split into instant on-device cleanup and on-demand on-device AI:
   - Cleanup: duplicates, near-duplicates, empty folders, single-item folders, same-name-folder merges, stale bookmarks, and loose top-level items.
@@ -26,6 +26,7 @@ on-device AI folder suggestions (Chrome Built-in AI / Gemini Nano).
 - Confirm-before-delete modal showing exactly what each deletion affects.
 - Inline tag editor with autocomplete from your existing tags and on-device AI tag suggestions.
 - Generated extension icon; viewport-aware layout.
+- Keyboard-friendly popup / side panel: `↓`/`↑` move through results, `Enter` opens the top hit, `Esc` clears the search.
 
 ## Themes
 - Three identities — **Quiet** (calm, neutral), **Vivid** (colourful), and **Deck** (dark, keyboard-first) — each with a **Light / Dark / System** appearance toggle in the manager header. Your choice is saved and applies to the popup and side panel too.

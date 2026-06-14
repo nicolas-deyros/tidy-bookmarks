@@ -15,6 +15,7 @@ All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https:
 - **Keyboard navigation** in the popup / side panel: ↓/↑ move through results, Enter opens the highlighted (or top) hit, Esc clears the search.
 
 ### Changed
+- **Renamed** to *Tidy Bookmarks — Private AI Organizer* (npm package `tidy-bookmarks`).
 - New pure modules `src/theme.js` and `src/health.js`; new functions `looseNormalizeUrl`, `findNearDuplicates`, `findStaleBookmarks`, `findSingleItemFolders`, and AI `suggestSimilarFolders` — all unit-tested.
 - `manager/suggestions-view.js` replaced by `manager/health-view.js`.
 - Existing `light/dark/auto` theme preference is migrated automatically on first load.
