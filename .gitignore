@@ -8,3 +8,5 @@ dist/
 Thumbs.db
 .agents/
 skills-lock.json
+.superpowers/
+.claude/
