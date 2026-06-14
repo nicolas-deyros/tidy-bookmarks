@@ -194,3 +194,28 @@ describe('suggestMethodologyPlan', () => {
     expect(await suggestMethodologyPlan('topic', 'Misc', methBks, { createSession: null })).toEqual([]);
   });
 });
+
+import { buildSimilarFoldersPrompt, parseSimilarFolders, suggestSimilarFolders } from '../src/ai.js';
+
+describe('similar folders', () => {
+  const titles = ['Dev', 'Programming', 'Coding', 'Recipes'];
+  it('prompt lists the folder titles', () => {
+    expect(buildSimilarFoldersPrompt(titles)).toContain('Dev');
+    expect(buildSimilarFoldersPrompt(titles)).toContain('Recipes');
+  });
+  it('parses groups and drops titles not in the allowlist', () => {
+    const out = parseSimilarFolders('Dev, Programming, Coding\nMade Up, Recipes', titles);
+    expect(out).toEqual([['Dev', 'Programming', 'Coding']]); // 2nd line has only 1 real title -> dropped
+  });
+  it('ignores junk output', () => {
+    expect(parseSimilarFolders('lorem ipsum', titles)).toEqual([]);
+  });
+  it('returns [] when no session', async () => {
+    expect(await suggestSimilarFolders(titles, { createSession: async () => null })).toEqual([]);
+  });
+  it('uses session output when present', async () => {
+    const session = { prompt: async () => 'Dev, Coding', destroy() {} };
+    const out = await suggestSimilarFolders(titles, { createSession: async () => session });
+    expect(out).toEqual([['Dev', 'Coding']]);
+  });
+});

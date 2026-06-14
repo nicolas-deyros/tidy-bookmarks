@@ -169,6 +169,48 @@ export async function suggestReorg(folderTitle, bookmarks, { createSession } = {
   return [];
 }
 
+export function buildSimilarFoldersPrompt(folderTitles) {
+  return [
+    'These are browser bookmark folder names. Group together the ones that mean the same topic.',
+    `Folders: ${folderTitles.join(', ')}`,
+    'Reply with one group per line as comma-separated names, e.g. "Dev, Coding".',
+    'Only include folders that have at least one match. Use the exact names. Nothing else.'
+  ].join('\n');
+}
+
+// Untrusted output: every name must match a real folder title (allowlist); groups need 2+.
+export function parseSimilarFolders(response, folderTitles) {
+  if (typeof response !== 'string') return [];
+  const allow = new Map(folderTitles.map(t => [t.toLowerCase(), t]));
+  const groups = [];
+  for (const line of response.split('\n')) {
+    const names = [];
+    for (const part of line.split(',')) {
+      const real = allow.get(part.trim().toLowerCase());
+      if (real && !names.includes(real)) names.push(real);
+    }
+    if (names.length >= 2) groups.push(names);
+  }
+  return groups;
+}
+
+export async function suggestSimilarFolders(folderTitles, { createSession } = {}) {
+  if (!createSession || folderTitles.length < 2) return [];
+  let session = null;
+  try {
+    session = await createSession();
+    if (session) {
+      const response = await session.prompt(buildSimilarFoldersPrompt(folderTitles));
+      return parseSimilarFolders(response, folderTitles);
+    }
+  } catch (err) {
+    console.warn('AI similar-folder suggestion failed:', err);
+  } finally {
+    try { session?.destroy?.(); } catch { /* ignore */ }
+  }
+  return [];
+}
+
 const METHODOLOGY_GUIDANCE = {
   topic: 'Group them into 2-5 topical subfolders with short descriptive names.',
   para: 'Classify each into exactly one of these folders: Projects, Areas, Resources, Archive.',
