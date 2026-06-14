@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { flattenBookmarks, listFolders, findEmptyFolders, countContents, isDescendant, dropIndex } from '../src/tree.js';
+import { flattenBookmarks, listFolders, findEmptyFolders, countContents, isDescendant, dropIndex, findSingleItemFolders } from '../src/tree.js';
 
 const tree = [{
   id: '0', title: '',
@@ -102,5 +102,22 @@ describe('dropIndex', () => {
   });
   it('drops at the end when beforeId is unknown', () => {
     expect(dropIndex(order, 'a', 'zzz')).toBe(3);
+  });
+});
+
+describe('findSingleItemFolders', () => {
+  const t = [{ id: '0', children: [
+    { id: '1', title: 'Bookmarks bar', children: [
+      { id: 'a', title: 'Lonely', children: [{ id: 'a1', title: 'One', url: 'https://x.com' }] },
+      { id: 'b', title: 'Full', children: [
+        { id: 'b1', title: 'p1', url: 'https://x.com/1' },
+        { id: 'b2', title: 'p2', url: 'https://x.com/2' }
+      ] },
+      { id: 'c', title: 'HasSub', children: [{ id: 'c1', title: 'Sub', children: [] }] }
+    ] }
+  ] }];
+  it('finds folders holding exactly one bookmark and no subfolders', () => {
+    const found = findSingleItemFolders(t).map(f => f.id);
+    expect(found).toEqual(['a']);
   });
 });

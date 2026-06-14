@@ -35,6 +35,17 @@ export function findEmptyFolders(tree) {
   return out;
 }
 
+// Non-root folders holding exactly one bookmark and no subfolders — usually clutter.
+export function findSingleItemFolders(tree) {
+  const out = [];
+  walk(tree, [], (node, _path, depth) => {
+    if (depth <= 1 || node.url || !node.title || !node.children) return;
+    const children = node.children;
+    if (children.length === 1 && children[0].url) out.push(node);
+  });
+  return out;
+}
+
 export function countContents(folder) {
   let bookmarks = 0;
   let folders = 0;
