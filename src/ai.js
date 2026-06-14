@@ -49,7 +49,7 @@ export function parseSuggestion(response, folders) {
 
 // Default factory: Chrome built-in Prompt API (on-device Gemini Nano).
 // Returns null when unavailable so callers fall back to rules.
-export async function defaultSessionFactory() {
+export async function defaultSessionFactory({ onDownloadProgress } = {}) {
   if (typeof LanguageModel === 'undefined') return null;
   // Declaring expected input/output language lets Chrome attest output safety
   // and silences the "No output language was specified" warning.
@@ -57,9 +57,20 @@ export async function defaultSessionFactory() {
     expectedInputs: [{ type: 'text', languages: ['en'] }],
     expectedOutputs: [{ type: 'text', languages: ['en'] }]
   };
-  const availability = await LanguageModel.availability(options);
+  let availability;
+  try {
+    availability = await LanguageModel.availability(options);
+  } catch {
+    return null;
+  }
   if (availability === 'unavailable') return null;
-  return LanguageModel.create(options);
+  const createOptions = { ...options };
+  // First use may download the model (hundreds of MB). Surface progress so the
+  // UI doesn't look frozen.
+  if (onDownloadProgress) {
+    createOptions.monitor = m => m.addEventListener('downloadprogress', e => onDownloadProgress(e));
+  }
+  return LanguageModel.create(createOptions);
 }
 
 export async function suggestFolder(bookmark, folders, { createSession } = {}) {

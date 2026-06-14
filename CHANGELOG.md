@@ -11,6 +11,8 @@ All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https:
 - New AI check: **similar-topic folders** (merges folders that mean the same thing, e.g. Dev/Coding), with output validated against the real-folder allowlist.
 - More per-folder **sort options**: A–Z, Z–A, Newest first, Oldest first, By domain, By URL.
 - Health **scope picker** is now an indented folder tree (roots included), each folder labelled by its own name — no more repeated entries.
+- On-device AI scans now show a **loading spinner, model-download percentage, and per-item progress**, plus a clear message when the built-in model is unavailable. Same feedback added to the inline "✨ Suggest" tag button.
+- **Keyboard navigation** in the popup / side panel: ↓/↑ move through results, Enter opens the highlighted (or top) hit, Esc clears the search.
 
 ### Changed
 - New pure modules `src/theme.js` and `src/health.js`; new functions `looseNormalizeUrl`, `findNearDuplicates`, `findStaleBookmarks`, `findSingleItemFolders`, and AI `suggestSimilarFolders` — all unit-tested.

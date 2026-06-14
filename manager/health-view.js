@@ -264,110 +264,157 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
 
 async function openAi(card, { container, ctx, scopeId, rerun }) {
   const body = drill(container, card.title, rerun);
-  body.append(el('p', { className: 'hb-status', textContent: 'Scanning on-device…' }));
-  const tree = await chrome.bookmarks.getTree();
-  const scope = scopeId ? [findNode(tree, scopeId)].filter(Boolean) : tree;
-  const flat = flattenBookmarks(scope);
-  const rootIds = new Set((tree[0]?.children ?? []).map(n => n.id));
-  const folders = listFolders(tree).filter(f => !rootIds.has(f.id));
-  const opts = { createSession: defaultSessionFactory };
-  body.replaceChildren();
+  const status = el('span', { className: 'hb-status' });
+  const loading = el('div', { className: 'hb-loading' });
+  loading.append(el('span', { className: 'hb-spinner' }), status);
+  body.append(loading);
+  const setStatus = t => { status.textContent = t; };
+  setStatus('Preparing on-device model… first run may download it.');
 
-  if (card.id === 'fileLoose') {
-    const loose = flat.filter(b => rootIds.has(b.parentId)).slice(0, 25);
-    const items = [];
-    for (const b of loose) {
-      const { folder, newFolderName } = await suggestFolder(b, folders, opts);
-      if (folder) items.push({ node: b, target: folder, label: `Move "${b.title}" → "${folder.title}"` });
-      else if (newFolderName) items.push({ node: b, newFolderName, label: `Create "${newFolderName}" for "${b.title}"` });
+  try {
+    const tree = await chrome.bookmarks.getTree();
+    const scope = scopeId ? [findNode(tree, scopeId)].filter(Boolean) : tree;
+    const flat = flattenBookmarks(scope);
+    const rootIds = new Set((tree[0]?.children ?? []).map(n => n.id));
+    const folders = listFolders(tree).filter(f => !rootIds.has(f.id));
+    const opts = { createSession: defaultSessionFactory };
+
+    // Probe the on-device model once so we can show a clear message, and surface
+    // the (possibly large) first-run download as a percentage.
+    let probe = null;
+    try {
+      probe = await defaultSessionFactory({
+        onDownloadProgress: e => setStatus(`Downloading on-device model… ${Math.round((e.loaded ?? 0) * 100)}%`)
+      });
+    } catch { probe = null; }
+    const aiReady = !!probe;
+    try { probe?.destroy?.(); } catch { /* ignore */ }
+
+    // Tags / tidy / similar have no rule-based fallback — they need the model.
+    if (!aiReady && card.id !== 'fileLoose') {
+      body.replaceChildren(aiUnavailableNote());
+      return;
     }
-    checklist(body, items, {
-      actionLabel: 'Apply selected',
-      emptyText: 'No filing suggestions (or AI unavailable).',
-      makeRow: it => el('span', { className: 'hb-title', textContent: it.label }),
-      rerun,
-      apply: async chosen => {
-        for (const it of chosen) {
-          if (it.target) await chrome.bookmarks.move(it.node.id, { parentId: it.target.id });
-          else {
-            const created = await chrome.bookmarks.create({ parentId: it.node.parentId, title: it.newFolderName });
-            await chrome.bookmarks.move(it.node.id, { parentId: created.id });
+
+    if (card.id === 'fileLoose') {
+      const loose = flat.filter(b => rootIds.has(b.parentId)).slice(0, 25);
+      const items = [];
+      for (let i = 0; i < loose.length; i++) {
+        setStatus(progressText(i, loose.length));
+        const b = loose[i];
+        const { folder, newFolderName } = await suggestFolder(b, folders, opts);
+        if (folder) items.push({ node: b, target: folder, label: `Move "${b.title}" → "${folder.title}"` });
+        else if (newFolderName) items.push({ node: b, newFolderName, label: `Create "${newFolderName}" for "${b.title}"` });
+      }
+      body.replaceChildren();
+      if (!aiReady) body.append(el('p', { className: 'hb-status', textContent: 'On-device AI unavailable — showing rule-based suggestions.' }));
+      checklist(body, items, {
+        actionLabel: 'Apply selected',
+        emptyText: 'No filing suggestions found.',
+        makeRow: it => el('span', { className: 'hb-title', textContent: it.label }),
+        rerun,
+        apply: async chosen => {
+          for (const it of chosen) {
+            if (it.target) await chrome.bookmarks.move(it.node.id, { parentId: it.target.id });
+            else {
+              const created = await chrome.bookmarks.create({ parentId: it.node.parentId, title: it.newFolderName });
+              await chrome.bookmarks.move(it.node.id, { parentId: created.id });
+            }
           }
         }
-      }
-    });
-    return;
-  }
-
-  if (card.id === 'tags') {
-    let tagMap = ctx.getTagMap();
-    const untagged = flat.filter(b => tagsFor(tagMap, b.id).length === 0).slice(0, 25);
-    const existing = allTags(tagMap).map(t => t.tag);
-    const items = [];
-    for (const b of untagged) {
-      const tags = await suggestTags(b, existing, opts);
-      if (tags.length) items.push({ node: b, tags, label: `Tag "${b.title}" with: ${tags.join(', ')}` });
+      });
+      return;
     }
-    checklist(body, items, {
-      actionLabel: 'Apply tags',
-      emptyText: 'No tag suggestions (or AI unavailable).',
-      makeRow: it => el('span', { className: 'hb-title', textContent: it.label }),
-      rerun,
-      apply: async chosen => {
-        for (const it of chosen) for (const t of it.tags) tagMap = addTag(tagMap, it.node.id, t);
-        ctx.setTagMap(tagMap);
-        await ctx.saveTags();
-      }
-    });
-    return;
-  }
 
-  if (card.id === 'tidy') {
-    const crowded = folders
-      .filter(f => (f.children ?? []).filter(c => c.url).length >= 8)
-      .sort((a, b) => (b.children?.length ?? 0) - (a.children?.length ?? 0))[0];
-    if (!crowded) { body.append(el('p', { className: 'hb-empty', textContent: 'No crowded folder to tidy (need 8+ bookmarks).' })); return; }
-    const contents = (crowded.children ?? []).filter(c => c.url);
-    const groups = await suggestReorg(crowded.title, contents, opts);
-    body.append(el('p', { className: 'hb-status', textContent: `Tidying "${crowded.title}" (${contents.length} bookmarks)` }));
-    checklist(body, groups.map(g => ({ group: g })), {
-      actionLabel: 'Create selected subfolders',
-      emptyText: 'No reorg suggestions (or AI unavailable).',
-      makeRow: it => el('span', { className: 'hb-title', textContent: `Subfolder "${it.group.name}" for ${it.group.bookmarkIds.length} bookmark(s)` }),
-      rerun,
-      apply: async chosen => {
-        for (const it of chosen) {
-          const created = await chrome.bookmarks.create({ parentId: crowded.id, title: it.group.name });
-          for (const id of it.group.bookmarkIds) await chrome.bookmarks.move(id, { parentId: created.id });
+    if (card.id === 'tags') {
+      let tagMap = ctx.getTagMap();
+      const untagged = flat.filter(b => tagsFor(tagMap, b.id).length === 0).slice(0, 25);
+      const existing = allTags(tagMap).map(t => t.tag);
+      const items = [];
+      for (let i = 0; i < untagged.length; i++) {
+        setStatus(progressText(i, untagged.length));
+        const b = untagged[i];
+        const tags = await suggestTags(b, existing, opts);
+        if (tags.length) items.push({ node: b, tags, label: `Tag "${b.title}" with: ${tags.join(', ')}` });
+      }
+      body.replaceChildren();
+      checklist(body, items, {
+        actionLabel: 'Apply tags',
+        emptyText: 'No tag suggestions.',
+        makeRow: it => el('span', { className: 'hb-title', textContent: it.label }),
+        rerun,
+        apply: async chosen => {
+          for (const it of chosen) for (const t of it.tags) tagMap = addTag(tagMap, it.node.id, t);
+          ctx.setTagMap(tagMap);
+          await ctx.saveTags();
         }
-      }
-    });
-    return;
-  }
+      });
+      return;
+    }
 
-  if (card.id === 'similar') {
-    const byTitle = new Map();
-    for (const f of folders) if (!byTitle.has(f.title)) byTitle.set(f.title, f);
-    const titles = [...byTitle.keys()];
-    const groups = await suggestSimilarFolders(titles, opts);
-    const items = groups
-      .map(names => names.map(n => byTitle.get(n)).filter(Boolean))
-      .filter(nodes => nodes.length >= 2)
-      .map(nodes => ({ nodes, label: `Merge: ${nodes.map(n => n.title).join(', ')}` }));
-    checklist(body, items, {
-      actionLabel: 'Merge selected',
-      emptyText: 'No similar folders found (or AI unavailable).',
-      makeRow: it => el('span', { className: 'hb-title', textContent: it.label }),
-      rerun,
-      apply: async chosen => {
-        const ok = await ctx.confirm('Merge similar folders?',
-          `Merges ${chosen.length} group(s) of related folders into one each, moving bookmarks together and deleting the extras. This can't be undone.`);
-        if (!ok) return false;
-        for (const it of chosen) await mergeGroup(it.nodes);
-      }
-    });
-    return;
+    if (card.id === 'tidy') {
+      const crowded = folders
+        .filter(f => (f.children ?? []).filter(c => c.url).length >= 8)
+        .sort((a, b) => (b.children?.length ?? 0) - (a.children?.length ?? 0))[0];
+      if (!crowded) { body.replaceChildren(el('p', { className: 'hb-empty', textContent: 'No crowded folder to tidy (need 8+ bookmarks).' })); return; }
+      const contents = (crowded.children ?? []).filter(c => c.url);
+      setStatus(`Analyzing "${crowded.title}" (${contents.length} bookmarks)…`);
+      const groups = await suggestReorg(crowded.title, contents, opts);
+      body.replaceChildren();
+      body.append(el('p', { className: 'hb-status', textContent: `Tidying "${crowded.title}" (${contents.length} bookmarks)` }));
+      checklist(body, groups.map(g => ({ group: g })), {
+        actionLabel: 'Create selected subfolders',
+        emptyText: 'The model returned no subfolder split.',
+        makeRow: it => el('span', { className: 'hb-title', textContent: `Subfolder "${it.group.name}" for ${it.group.bookmarkIds.length} bookmark(s)` }),
+        rerun,
+        apply: async chosen => {
+          for (const it of chosen) {
+            const created = await chrome.bookmarks.create({ parentId: crowded.id, title: it.group.name });
+            for (const id of it.group.bookmarkIds) await chrome.bookmarks.move(id, { parentId: created.id });
+          }
+        }
+      });
+      return;
+    }
+
+    if (card.id === 'similar') {
+      const byTitle = new Map();
+      for (const f of folders) if (!byTitle.has(f.title)) byTitle.set(f.title, f);
+      const titles = [...byTitle.keys()];
+      setStatus(`Comparing ${titles.length} folder names…`);
+      const groups = await suggestSimilarFolders(titles, opts);
+      const items = groups
+        .map(names => names.map(n => byTitle.get(n)).filter(Boolean))
+        .filter(nodes => nodes.length >= 2)
+        .map(nodes => ({ nodes, label: `Merge: ${nodes.map(n => n.title).join(', ')}` }));
+      body.replaceChildren();
+      checklist(body, items, {
+        actionLabel: 'Merge selected',
+        emptyText: 'No similar folders found.',
+        makeRow: it => el('span', { className: 'hb-title', textContent: it.label }),
+        rerun,
+        apply: async chosen => {
+          const ok = await ctx.confirm('Merge similar folders?',
+            `Merges ${chosen.length} group(s) of related folders into one each, moving bookmarks together and deleting the extras. This can't be undone.`);
+          if (!ok) return false;
+          for (const it of chosen) await mergeGroup(it.nodes);
+        }
+      });
+      return;
+    }
+  } catch (err) {
+    body.replaceChildren(el('p', { className: 'hb-empty', textContent: `Scan failed: ${err.message}` }));
   }
+}
+
+function progressText(i, total) {
+  if (total === 0) return 'Nothing to scan here.';
+  return `Scanning ${i + 1} of ${total}… (${Math.round((i / total) * 100)}%)`;
+}
+
+function aiUnavailableNote() {
+  return el('p', { className: 'hb-empty',
+    textContent: "On-device AI isn't available in this browser, so this check can't run. It needs a recent desktop Chrome with Built-in AI (Gemini Nano) enabled. The instant Cleanup checks work without it." });
 }
 
 // Move every child of the trailing folders into the first, then delete them.
