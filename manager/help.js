@@ -1,5 +1,7 @@
 const FEATURES = [
   'Browse: folders on the left, contents on the right. Click a folder to view it.',
+  'Manage bookmarks: delete any bookmark, or check several (select-all in the toolbar) to bulk delete, move, tag, or remove a tag.',
+  'Folders: "+ New folder", rename (✎), or delete (🗑) in the rail; drag a folder onto another to move it.',
   'Drag bookmarks onto folders to move them; drag bookmarks to reorder; drag folders to restructure.',
   'Tags: add with "+ tag", autocomplete from existing tags, or "✨ Suggest" for AI tags.',
   'Sort a folder with the Sort control; Reorganize a folder by methodology with preview + undo.',

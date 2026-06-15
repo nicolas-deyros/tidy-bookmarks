@@ -2,6 +2,20 @@
 
 All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning. Everything runs on-device — no network, no tracking.
 
+## [0.6.0] — 2026-06-15
+
+### Added
+- **Browse is now a management surface:** a delete button on every bookmark, plus a **select-all** checkbox and per-row checkboxes that drive a bulk bar — **delete, move, tag, and remove-tag** across many bookmarks at once.
+- **Folder operations** in the rail: **+ New folder**, inline **rename**, and **delete** (with a blast-radius confirm; permanent roots are protected). Moving folders still works via drag-and-drop.
+- **View-transition** cross-fade when switching between Browse and Health (skipped under `prefers-reduced-motion`).
+
+### Changed
+- **Suggest tags** now lets you **pick which suggested tags to add** (toggle chips, on by default) and **type your own** — no more all-or-nothing.
+- Health spans the **full width**; AI cards and drill-ins use clearer, action-first copy with a one-line subtitle.
+- Typing in **search while on Health** now jumps to Browse and shows results.
+- **Popup vs side panel** are styled independently (the side panel loads with `?context=sidepanel`): the popup is a fixed width, the side panel fills — fixing the layout conflict.
+- **Unified CSS:** one shared style for every `<select>` (header, sort, move, reorganize), and the Reorganize modal now matches Browse/Health.
+
 ## [0.5.0] — 2026-06-14
 
 ### Added
