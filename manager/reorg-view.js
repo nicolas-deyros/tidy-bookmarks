@@ -35,6 +35,7 @@ export function openReorg(folder, ctx) {
   const label = document.createElement('span');
   label.textContent = 'Methodology: ';
   const select = document.createElement('select');
+  select.setAttribute('aria-label', 'Reorganization methodology');
   const recommended = recommendMethodology(bookmarksOf(folder));
   for (const m of METHODOLOGIES) {
     const opt = document.createElement('option');

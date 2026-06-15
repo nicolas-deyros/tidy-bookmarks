@@ -1,7 +1,7 @@
 # Chrome Web Store Listing — Tidy Bookmarks
 
-**Last Updated:** 2026-06-14
-**Version:** 0.5.0
+**Last Updated:** 2026-06-15
+**Version:** 0.6.0
 
 ## Short description
 Search, sort, tag, and reorganize your bookmarks with private on-device AI suggestions.
@@ -18,6 +18,7 @@ Search, sort, tag, and reorganize your bookmarks with private on-device AI sugge
 - AI folder/tag suggestions run on-device via Chrome's built-in model (Gemini Nano); if unavailable, a local rule-based fallback is used.
 
 ## Version History
+- 0.6.0 — Browse becomes a manager: per-bookmark delete, bulk select → delete/move/tag/remove-tag, and folder create/rename/delete. Suggest-tags lets you pick individual tags; Health is full-width with clearer copy; popup and side panel are styled independently; view-transition polish; unified select/modal CSS.
 - 0.5.0 — Three switchable themes (Quiet/Vivid/Deck) each with Light/Dark/System appearance; the Suggestions tab becomes a prioritized, folder-scoped Health dashboard (duplicates, near-duplicates, empty/single-item/same-name folders, stale & loose items, plus on-device AI filing, tagging, tidying, and similar-folder merges). No new permissions; still 100% on-device.
 - 0.4.1 — Auto/Light/Dark theme toggle (sidebar now respects dark mode), popup fills height, fixed Suggestions tab, auto-selected first folder, keyboard shortcuts, and an in-app help panel.
 - 0.4.0 — Methodology reorganization: reorganize a folder by PARA, Johnny.Decimal, Topic, By-recency, or Flat, with an approvable preview and one-click undo. No new permissions.

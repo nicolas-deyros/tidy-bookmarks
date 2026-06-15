@@ -39,10 +39,10 @@ export function buildHealthReport({ tree, now = Date.now(), scopeId = '' } = {})
   ].map(c => ({ ...c, group: 'cleanup', kind: 'instant' }));
 
   const ai = [
-    { id: 'fileLoose', title: 'File loose items', description: 'Suggest a folder for each top-level bookmark.', action: 'Scan' },
-    { id: 'tags', title: 'Suggest tags', description: 'Propose 1–3 tags for untagged bookmarks.', action: 'Scan' },
-    { id: 'tidy', title: 'Tidy a folder', description: 'Split a crowded folder into subfolders.', action: 'Pick folder' },
-    { id: 'similar', title: 'Similar-topic folders', description: 'Find folders that mean the same thing.', action: 'Scan' }
+    { id: 'fileLoose', title: 'File loose items', description: 'Bookmarks sitting loose at the top level — AI suggests a folder for each.', action: 'Scan' },
+    { id: 'tags', title: 'Suggest tags', description: 'Untagged bookmarks — AI proposes a few topic tags you can pick from.', action: 'Scan' },
+    { id: 'tidy', title: 'Tidy a folder', description: 'Pick your most crowded folder; AI splits it into topic subfolders.', action: 'Scan' },
+    { id: 'similar', title: 'Similar-topic folders', description: 'Folders that mean the same thing (e.g. Dev + Coding) — AI suggests merging them.', action: 'Scan' }
   ].map(c => ({ ...c, group: 'ai', kind: 'ai', count: null, priority: 'med' }));
 
   const rank = { high: 0, med: 1, low: 2 };

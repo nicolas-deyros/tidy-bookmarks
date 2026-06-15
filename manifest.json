@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tidy Bookmarks — Private AI Organizer",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Search, sort, tag, and reorganize your bookmarks with private on-device AI suggestions.",
   "permissions": ["bookmarks", "storage", "favicon", "sidePanel"],
   "content_security_policy": {
@@ -21,7 +21,7 @@
     }
   },
   "side_panel": {
-    "default_path": "popup/popup.html"
+    "default_path": "popup/popup.html?context=sidepanel"
   },
   "commands": {
     "_execute_action": {

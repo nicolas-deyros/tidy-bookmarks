@@ -1,6 +1,8 @@
-/* width:100% lets the side panel stretch; min-width gives the action popup a
-   real width (popups size to content, so width:100% alone collapses them). */
-body { width: 100%; min-width: 340px; height: 100vh; box-sizing: border-box; margin: 0; padding: 10px; display: flex; flex-direction: column; font: 13px system-ui, sans-serif; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+body { height: 100vh; box-sizing: border-box; margin: 0; padding: 10px; display: flex; flex-direction: column; font: 13px system-ui, sans-serif; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+/* The action popup has no intrinsic width (it sizes to content), so pin it.
+   The side panel has a real width, so let the body fill it. */
+:root[data-context="popup"] body { width: 360px; }
+:root[data-context="sidepanel"] body { width: 100%; }
 #search { width: 100%; box-sizing: border-box; padding: 7px 10px; margin-bottom: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); }
 #status { display: flex; gap: 8px; margin-bottom: 8px; }
 #results { list-style: none; margin: 0 0 8px; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
