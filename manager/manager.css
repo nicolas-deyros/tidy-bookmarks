@@ -21,6 +21,14 @@ header h1 { font-size: 18px; margin: 0; font-weight: 650; }
 .folder-chevron { width: 14px; text-align: center; color: var(--text-soft); }
 .folder-count { margin-left: auto; color: var(--text-soft); font-size: 12px; }
 .folder-children { margin: 0; padding-left: 16px; list-style: none; }
+.rail-toolbar { margin-bottom: 8px; }
+.rail-new { width: 100%; padding: 6px; cursor: pointer; border: 1px dashed var(--border); background: none; color: var(--text-soft); border-radius: var(--radius); font: inherit; font-size: 12px; }
+.rail-new:hover { color: var(--text); border-color: var(--accent); }
+.rail-input { width: 100%; box-sizing: border-box; padding: 6px 8px; background: var(--surface); color: var(--text); border: 1px solid var(--accent); border-radius: var(--radius); font: inherit; font-size: 13px; }
+.folder-actions { display: none; gap: 2px; margin-left: 6px; }
+.folder-row:hover .folder-actions, .folder-row.selected .folder-actions { display: inline-flex; }
+.folder-act { border: none; background: none; cursor: pointer; font-size: 12px; opacity: .6; padding: 0 2px; }
+.folder-act:hover { opacity: 1; }
 
 .content-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .select-all, .bk-check { accent-color: var(--accent); flex: none; cursor: pointer; }
