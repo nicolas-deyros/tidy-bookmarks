@@ -55,9 +55,11 @@ function folderNode(folder, ctx, rootIds) {
     actions.className = 'folder-actions';
     const ren = document.createElement('button');
     ren.className = 'folder-act'; ren.textContent = '✎'; ren.title = 'Rename folder';
+    ren.setAttribute('aria-label', `Rename folder "${folder.title}"`);
     ren.addEventListener('click', e => { e.stopPropagation(); startRename(name, folder, ctx); });
     const del = document.createElement('button');
     del.className = 'folder-act'; del.textContent = '🗑'; del.title = 'Delete folder';
+    del.setAttribute('aria-label', `Delete folder "${folder.title}"`);
     del.addEventListener('click', e => { e.stopPropagation(); deleteFolder(folder, ctx); });
     actions.append(ren, del);
     row.appendChild(actions);
@@ -98,6 +100,8 @@ function inlineEdit(target, { value = '', placeholder = '', onCommit }) {
   input.className = 'rail-input';
   input.value = value;
   input.placeholder = placeholder;
+  input.autocomplete = 'off'; input.spellcheck = false;
+  input.setAttribute('aria-label', placeholder || 'Folder name');
   target.replaceWith(input);
   input.focus();
   input.select();

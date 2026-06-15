@@ -256,6 +256,7 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
       const row = el('div', { className: 'hb-item hb-move-row' });
       row.append(favicon(b.url), el('span', { className: 'hb-title', textContent: b.title || b.url }));
       const sel = el('select', { className: 'hb-move-select' });
+      sel.setAttribute('aria-label', `Move "${b.title || b.url}" to folder`);
       sel.append(el('option', { value: '', textContent: 'Move to…' }));
       for (const f of folders) sel.append(el('option', { value: f.id, textContent: f.path ? `${f.path} / ${f.title}` : f.title }));
       const go = el('button', { className: 'hb-btn', textContent: 'Move' });
@@ -274,6 +275,7 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
 async function openAi(card, { container, ctx, scopeId, rerun }) {
   const body = drill(container, card.title, rerun, AI_SUBTITLES[card.id]);
   const status = el('span', { className: 'hb-status' });
+  status.setAttribute('aria-live', 'polite');
   const loading = el('div', { className: 'hb-loading' });
   loading.append(el('span', { className: 'hb-spinner' }), status);
   body.append(loading);
@@ -358,14 +360,17 @@ async function openAi(card, { container, ctx, scopeId, rerun }) {
         const chips = el('span', { className: 'hb-tagchips' });
         const makeChip = t => {
           const chip = el('button', { className: 'hb-tagchip on', textContent: t });
+          chip.setAttribute('aria-pressed', 'true');
           chip.addEventListener('click', () => {
-            if (chosen.has(t)) { chosen.delete(t); chip.classList.remove('on'); }
-            else { chosen.add(t); chip.classList.add('on'); }
+            const on = !chosen.has(t);
+            if (on) { chosen.add(t); chip.classList.add('on'); } else { chosen.delete(t); chip.classList.remove('on'); }
+            chip.setAttribute('aria-pressed', String(on));
           });
           return chip;
         };
         for (const t of it.tags) chips.append(makeChip(t));
-        const input = el('input', { className: 'tag-input', type: 'text', placeholder: '+ tag' });
+        const input = el('input', { className: 'tag-input', type: 'text', placeholder: '+ tag', autocomplete: 'off', spellcheck: false });
+        input.setAttribute('aria-label', 'Add your own tag');
         input.addEventListener('keydown', e => {
           if (e.key !== 'Enter' || !input.value.trim()) return;
           const t = input.value.trim();

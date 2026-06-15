@@ -48,11 +48,13 @@ export function renderContents(container, ctx) {
   toolbar.className = 'content-toolbar';
   const all = document.createElement('input');
   all.type = 'checkbox'; all.className = 'select-all'; all.title = 'Select all';
+  all.setAttribute('aria-label', 'Select all bookmarks in this folder');
   toolbar.appendChild(all);
   const title = document.createElement('strong');
   title.textContent = folder.title || '(unnamed)';
   toolbar.appendChild(title);
   const sortSel = document.createElement('select');
+  sortSel.setAttribute('aria-label', 'Sort bookmarks');
   const ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Sort…'; sortSel.appendChild(ph);
   for (const mode of SORT_MODES) {
     const opt = document.createElement('option'); opt.value = mode; opt.textContent = SORT_LABELS[mode]; sortSel.appendChild(opt);
@@ -119,6 +121,7 @@ function bulkBar(ctx) {
 
   const move = document.createElement('select');
   move.className = 'move-select';
+  move.setAttribute('aria-label', 'Move selected bookmarks to folder');
   const mph = document.createElement('option'); mph.value = ''; mph.textContent = 'Move to…'; move.appendChild(mph);
   for (const f of folderChoices(ctx.tree)) {
     const opt = document.createElement('option');
@@ -136,6 +139,8 @@ function bulkBar(ctx) {
 
   const tagInput = document.createElement('input');
   tagInput.type = 'text'; tagInput.className = 'tag-input'; tagInput.placeholder = 'Tag selected…';
+  tagInput.autocomplete = 'off'; tagInput.spellcheck = false;
+  tagInput.setAttribute('aria-label', 'Add a tag to selected bookmarks');
   tagInput.addEventListener('keydown', async e => {
     if (e.key !== 'Enter' || !tagInput.value.trim()) return;
     let map = ctx.getTagMap();
@@ -152,6 +157,7 @@ function bulkBar(ctx) {
   if (tagsOnSel.size) {
     const rm = document.createElement('select');
     rm.className = 'move-select';
+    rm.setAttribute('aria-label', 'Remove a tag from selected bookmarks');
     const rph = document.createElement('option'); rph.value = ''; rph.textContent = 'Remove tag…'; rm.appendChild(rph);
     for (const t of tagsOnSel) { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; rm.appendChild(opt); }
     rm.addEventListener('change', async () => {
@@ -186,6 +192,7 @@ function bookmarkRow(node, allFolders, ctx, { withPath, draggable, checkable = f
   if (checkable) {
     const cb = document.createElement('input');
     cb.type = 'checkbox'; cb.className = 'bk-check';
+    cb.setAttribute('aria-label', `Select "${node.title || node.url}"`);
     cb.checked = ctx.uiState.checked.has(node.id);
     cb.addEventListener('change', () => {
       if (cb.checked) ctx.uiState.checked.add(node.id); else ctx.uiState.checked.delete(node.id);
@@ -234,6 +241,7 @@ function bookmarkRow(node, allFolders, ctx, { withPath, draggable, checkable = f
 
   const move = document.createElement('select');
   move.className = 'move-select';
+  move.setAttribute('aria-label', `Move "${node.title || node.url}" to folder`);
   const mph = document.createElement('option'); mph.value = ''; mph.textContent = 'Move to…'; move.appendChild(mph);
   for (const folder of allFolders) {
     if (folder.id === node.parentId) continue;
@@ -253,6 +261,7 @@ function bookmarkRow(node, allFolders, ctx, { withPath, draggable, checkable = f
 
   const del = document.createElement('button');
   del.className = 'bk-del'; del.textContent = '🗑'; del.title = 'Delete bookmark';
+  del.setAttribute('aria-label', `Delete "${node.title || node.url}"`);
   del.addEventListener('click', async () => {
     const ok = await ctx.confirm('Delete bookmark?', `Deletes "${node.title || node.url}". This can't be undone.`);
     if (!ok) return;
