@@ -107,7 +107,12 @@ function showHealth() {
 
 tabBrowse.addEventListener('click', showBrowse);
 tabHealth.addEventListener('click', showHealth);
-searchEl.addEventListener('input', () => { search = searchEl.value; renderContents(contentsEl, ctx); });
+searchEl.addEventListener('input', () => {
+  search = searchEl.value;
+  // Searching always shows results in Browse — jump there if we're in Health.
+  if (!healthView.hidden) showBrowse();
+  else renderContents(contentsEl, ctx);
+});
 
 async function onThemeChange() {
   const pref = { theme: themeSelect.value, appearance: appearanceSelect.value };

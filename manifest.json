@@ -21,7 +21,7 @@
     }
   },
   "side_panel": {
-    "default_path": "popup/popup.html"
+    "default_path": "popup/popup.html?context=sidepanel"
   },
   "commands": {
     "_execute_action": {
