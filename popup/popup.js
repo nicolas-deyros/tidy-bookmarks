@@ -11,7 +11,7 @@ let tagMap = {};
 // popup.html is shared by the action popup and the side panel; the side panel
 // loads it with ?context=sidepanel so each can be styled independently.
 document.documentElement.dataset.context =
-  new URLSearchParams(location.search).get('context') === 'sidepanel' ? 'sidepanel' : 'popup';
+  new URLSearchParams(window.location.search).get('context') === 'sidepanel' ? 'sidepanel' : 'popup';
 
 async function init() {
   // Apply theme first (before the slower bookmark fetch) to avoid any flash.
