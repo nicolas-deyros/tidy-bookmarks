@@ -135,5 +135,7 @@ a.hb-title { color: var(--link); }
   cursor: pointer;
 }
 
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

@@ -93,6 +93,15 @@ async function refresh() {
   renderContents(contentsEl, ctx);
 }
 
+// Cross-fade view swaps where supported; skip under reduced-motion / no support.
+function withTransition(fn) {
+  if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.startViewTransition(fn);
+  } else {
+    fn();
+  }
+}
+
 async function showBrowse() {
   browseView.hidden = false; healthView.hidden = true;
   tabBrowse.setAttribute('aria-selected', 'true'); tabHealth.setAttribute('aria-selected', 'false');
@@ -105,12 +114,12 @@ function showHealth() {
     .catch(err => { healthContainer.textContent = `Analysis failed: ${err.message}`; });
 }
 
-tabBrowse.addEventListener('click', showBrowse);
-tabHealth.addEventListener('click', showHealth);
+tabBrowse.addEventListener('click', () => withTransition(showBrowse));
+tabHealth.addEventListener('click', () => withTransition(showHealth));
 searchEl.addEventListener('input', () => {
   search = searchEl.value;
   // Searching always shows results in Browse — jump there if we're in Health.
-  if (!healthView.hidden) showBrowse();
+  if (!healthView.hidden) withTransition(showBrowse);
   else renderContents(contentsEl, ctx);
 });
 
@@ -128,8 +137,8 @@ document.addEventListener('keydown', e => {
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
   if (e.key === '/') { e.preventDefault(); searchEl.focus(); }
-  else if (e.key === 'b') showBrowse();
-  else if (e.key === 's') showHealth();
+  else if (e.key === 'b') withTransition(showBrowse);
+  else if (e.key === 's') withTransition(showHealth);
 });
 
 refresh().catch(err => { contentsEl.textContent = `Failed to load bookmarks: ${err.message}`; });
