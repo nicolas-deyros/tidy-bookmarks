@@ -1,7 +1,7 @@
 import { isSafeUrl, faviconParams } from '../src/url-utils.js';
 import { sortChildren, SORT_MODES } from '../src/sorting.js';
 import { searchBookmarks } from '../src/search.js';
-import { flattenBookmarks, listFolders } from '../src/tree.js';
+import { flattenBookmarks, listFolders, folderChoices } from '../src/tree.js';
 import { addTag, removeTag, tagsFor, allTags } from '../src/tags.js';
 import { suggestTags, defaultSessionFactory } from '../src/ai.js';
 import { openReorg, renderUndoBar } from './reorg-view.js';
@@ -41,9 +41,14 @@ export function renderContents(container, ctx) {
   }
 
   renderUndoBar(container, ctx);
+  const checked = ctx.uiState.checked;
+  const bookmarks = (folder.children ?? []).filter(c => c.url);
 
   const toolbar = document.createElement('div');
   toolbar.className = 'content-toolbar';
+  const all = document.createElement('input');
+  all.type = 'checkbox'; all.className = 'select-all'; all.title = 'Select all';
+  toolbar.appendChild(all);
   const title = document.createElement('strong');
   title.textContent = folder.title || '(unnamed)';
   toolbar.appendChild(title);
@@ -66,13 +71,101 @@ export function renderContents(container, ctx) {
   reorgBtn.textContent = 'Reorganize';
   reorgBtn.addEventListener('click', () => openReorg(folder, ctx));
   toolbar.appendChild(reorgBtn);
-
   container.appendChild(toolbar);
 
-  const folders = listFolders(ctx.tree);
-  for (const child of folder.children ?? []) {
-    if (child.url) container.appendChild(bookmarkRow(child, folders, ctx, { withPath: false, draggable: true }));
+  const bulkHost = document.createElement('div');
+  container.appendChild(bulkHost);
+
+  function refreshBulk() {
+    bulkHost.replaceChildren();
+    if (checked.size > 0) bulkHost.appendChild(bulkBar(ctx));
+    all.checked = bookmarks.length > 0 && bookmarks.every(b => checked.has(b.id));
+    all.indeterminate = !all.checked && bookmarks.some(b => checked.has(b.id));
   }
+  all.addEventListener('change', () => {
+    if (all.checked) bookmarks.forEach(b => checked.add(b.id));
+    else bookmarks.forEach(b => checked.delete(b.id));
+    renderContents(container, ctx);
+  });
+
+  const folders = listFolders(ctx.tree);
+  for (const child of bookmarks) {
+    container.appendChild(bookmarkRow(child, folders, ctx, { withPath: false, draggable: true, checkable: true, onToggle: refreshBulk }));
+  }
+  refreshBulk();
+}
+
+// Bulk action bar shown when one or more bookmarks are checked.
+function bulkBar(ctx) {
+  const checked = ctx.uiState.checked;
+  const bar = document.createElement('div');
+  bar.className = 'bulk-bar';
+
+  const count = document.createElement('span');
+  count.className = 'bulk-count';
+  count.textContent = `${checked.size} selected`;
+  bar.appendChild(count);
+
+  const del = document.createElement('button');
+  del.textContent = 'Delete'; del.className = 'danger';
+  del.addEventListener('click', async () => {
+    const ok = await ctx.confirm('Delete selected?', `Permanently deletes ${checked.size} bookmark(s). This can't be undone.`);
+    if (!ok) return;
+    for (const id of checked) await chrome.bookmarks.remove(id);
+    checked.clear();
+    await ctx.refresh();
+  });
+  bar.appendChild(del);
+
+  const move = document.createElement('select');
+  move.className = 'move-select';
+  const mph = document.createElement('option'); mph.value = ''; mph.textContent = 'Move to…'; move.appendChild(mph);
+  for (const f of folderChoices(ctx.tree)) {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = '   '.repeat(Math.max(0, f.depth - 1)) + f.title;
+    move.appendChild(opt);
+  }
+  move.addEventListener('change', async () => {
+    if (!move.value) return;
+    for (const id of checked) await chrome.bookmarks.move(id, { parentId: move.value });
+    checked.clear();
+    await ctx.refresh();
+  });
+  bar.appendChild(move);
+
+  const tagInput = document.createElement('input');
+  tagInput.type = 'text'; tagInput.className = 'tag-input'; tagInput.placeholder = 'Tag selected…';
+  tagInput.addEventListener('keydown', async e => {
+    if (e.key !== 'Enter' || !tagInput.value.trim()) return;
+    let map = ctx.getTagMap();
+    for (const id of checked) map = addTag(map, id, tagInput.value);
+    ctx.setTagMap(map);
+    await ctx.saveTags();
+    checked.clear();
+    await ctx.refresh();
+  });
+  bar.appendChild(tagInput);
+
+  const tagsOnSel = new Set();
+  for (const id of checked) for (const t of tagsFor(ctx.getTagMap(), id)) tagsOnSel.add(t);
+  if (tagsOnSel.size) {
+    const rm = document.createElement('select');
+    rm.className = 'move-select';
+    const rph = document.createElement('option'); rph.value = ''; rph.textContent = 'Remove tag…'; rm.appendChild(rph);
+    for (const t of tagsOnSel) { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; rm.appendChild(opt); }
+    rm.addEventListener('change', async () => {
+      if (!rm.value) return;
+      let map = ctx.getTagMap();
+      for (const id of checked) map = removeTag(map, id, rm.value);
+      ctx.setTagMap(map);
+      await ctx.saveTags();
+      checked.clear();
+      await ctx.refresh();
+    });
+    bar.appendChild(rm);
+  }
+  return bar;
 }
 
 function findFolder(tree, id) {
@@ -86,9 +179,20 @@ function findFolder(tree, id) {
   return found;
 }
 
-function bookmarkRow(node, allFolders, ctx, { withPath, draggable }) {
+function bookmarkRow(node, allFolders, ctx, { withPath, draggable, checkable = false, onToggle } = {}) {
   const li = document.createElement('div');
   li.className = 'bookmark';
+
+  if (checkable) {
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'bk-check';
+    cb.checked = ctx.uiState.checked.has(node.id);
+    cb.addEventListener('change', () => {
+      if (cb.checked) ctx.uiState.checked.add(node.id); else ctx.uiState.checked.delete(node.id);
+      onToggle?.();
+    });
+    li.appendChild(cb);
+  }
 
   if (draggable) {
     const handle = document.createElement('span');
@@ -146,6 +250,17 @@ function bookmarkRow(node, allFolders, ctx, { withPath, draggable }) {
   li.appendChild(move);
 
   li.appendChild(tagBar(node, ctx));
+
+  const del = document.createElement('button');
+  del.className = 'bk-del'; del.textContent = '🗑'; del.title = 'Delete bookmark';
+  del.addEventListener('click', async () => {
+    const ok = await ctx.confirm('Delete bookmark?', `Deletes "${node.title || node.url}". This can't be undone.`);
+    if (!ok) return;
+    await chrome.bookmarks.remove(node.id);
+    ctx.uiState.checked.delete(node.id);
+    await ctx.refresh();
+  });
+  li.appendChild(del);
   return li;
 }
 

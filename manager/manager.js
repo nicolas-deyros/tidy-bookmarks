@@ -19,7 +19,7 @@ const themeSelect = document.getElementById('theme-select');
 const appearanceSelect = document.getElementById('appearance-select');
 
 let tagMap = {};
-let uiState = { expanded: new Set(), selected: '' };
+let uiState = { expanded: new Set(), selected: '', checked: new Set() };
 let tree = [];
 let search = '';
 let drag = null; // { id, kind }
@@ -51,7 +51,7 @@ const ctx = {
   saveTags,
   refresh,
   confirm: confirmModal,
-  async selectFolder(id) { uiState.selected = id; await saveUiState(); renderContents(contentsEl, ctx); renderRail(railEl, ctx); },
+  async selectFolder(id) { uiState.selected = id; uiState.checked.clear(); await saveUiState(); renderContents(contentsEl, ctx); renderRail(railEl, ctx); },
   async toggleFolder(id) {
     if (uiState.expanded.has(id)) uiState.expanded.delete(id); else uiState.expanded.add(id);
     await saveUiState(); renderRail(railEl, ctx);

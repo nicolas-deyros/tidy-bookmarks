@@ -23,6 +23,12 @@ header h1 { font-size: 18px; margin: 0; font-weight: 650; }
 .folder-children { margin: 0; padding-left: 16px; list-style: none; }
 
 .content-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.select-all, .bk-check { accent-color: var(--accent); flex: none; cursor: pointer; }
+.bk-del { border: none; background: none; cursor: pointer; font-size: 13px; opacity: .55; padding: 0 2px; }
+.bk-del:hover { opacity: 1; }
+.bulk-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--bg-sel); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; margin-bottom: 10px; }
+.bulk-count { font-size: 12px; font-weight: 600; color: var(--text); margin-right: 2px; }
+.bulk-bar .danger { background: var(--danger); color: #fff; border: none; border-radius: var(--radius); padding: 6px 12px; cursor: pointer; }
 .bookmark { display: flex; align-items: center; gap: 8px; padding: 4px 2px; border-bottom: 1px solid var(--border); }
 .bookmark.drag-over-top { box-shadow: inset 0 2px 0 var(--link); }
 .bookmark a { color: var(--link); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px; }
