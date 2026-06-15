@@ -94,17 +94,26 @@ function cardGrid(items, onOpen) {
 }
 
 // Generic drill-in shell with a back button.
-function drill(container, title, rerun) {
+function drill(container, title, rerun, subtitle) {
   container.replaceChildren();
   const head = el('div', { className: 'hb-drill-head' });
   const back = el('button', { className: 'hb-back', textContent: '← Health' });
   back.addEventListener('click', rerun);
   head.append(back, el('span', { className: 'hb-drill-title', textContent: title }));
   container.append(head);
+  if (subtitle) container.append(el('p', { className: 'hb-drill-sub', textContent: subtitle }));
   const body = el('div', { className: 'hb-drill-body' });
   container.append(body);
   return body;
 }
+
+// One-line guidance under each AI drill-in title.
+const AI_SUBTITLES = {
+  fileLoose: 'For each loose bookmark, apply the suggested folder — tick the ones you want.',
+  tags: 'Choose which suggested tags to add, or type your own. Nothing is saved until you apply.',
+  tidy: 'Review the proposed subfolders and create the ones you want.',
+  similar: 'Merge folders that mean the same thing into one.'
+};
 
 // Checkbox list + a single batch action. items: [{node, label, checked}], apply(selectedNodes).
 function checklist(body, items, { actionLabel, emptyText, makeRow, apply, rerun }) {
@@ -140,7 +149,7 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
   const scope = scopeId ? [findNode(tree, scopeId)].filter(Boolean) : tree;
   const flat = flattenBookmarks(scope);
   const rootIds = new Set((tree[0]?.children ?? []).map(n => n.id));
-  const body = drill(container, card.title, rerun);
+  const body = drill(container, card.title, rerun, card.description);
 
   if (card.id === 'duplicates' || card.id === 'nearDuplicates') {
     const groups = card.id === 'duplicates' ? findDuplicates(flat) : findNearDuplicates(flat);
@@ -263,7 +272,7 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
 }
 
 async function openAi(card, { container, ctx, scopeId, rerun }) {
-  const body = drill(container, card.title, rerun);
+  const body = drill(container, card.title, rerun, AI_SUBTITLES[card.id]);
   const status = el('span', { className: 'hb-status' });
   const loading = el('div', { className: 'hb-loading' });
   loading.append(el('span', { className: 'hb-spinner' }), status);
@@ -327,28 +336,59 @@ async function openAi(card, { container, ctx, scopeId, rerun }) {
     }
 
     if (card.id === 'tags') {
-      let tagMap = ctx.getTagMap();
-      const untagged = flat.filter(b => tagsFor(tagMap, b.id).length === 0).slice(0, 25);
-      const existing = allTags(tagMap).map(t => t.tag);
+      const tagMap0 = ctx.getTagMap();
+      const untagged = flat.filter(b => tagsFor(tagMap0, b.id).length === 0).slice(0, 25);
+      const existing = allTags(tagMap0).map(t => t.tag);
       const items = [];
       for (let i = 0; i < untagged.length; i++) {
         setStatus(progressText(i, untagged.length));
-        const b = untagged[i];
-        const tags = await suggestTags(b, existing, opts);
-        if (tags.length) items.push({ node: b, tags, label: `Tag "${b.title}" with: ${tags.join(', ')}` });
+        const tags = await suggestTags(untagged[i], existing, opts);
+        if (tags.length) items.push({ node: untagged[i], tags });
       }
       body.replaceChildren();
-      checklist(body, items, {
-        actionLabel: 'Apply tags',
-        emptyText: 'No tag suggestions.',
-        makeRow: it => el('span', { className: 'hb-title', textContent: it.label }),
-        rerun,
-        apply: async chosen => {
-          for (const it of chosen) for (const t of it.tags) tagMap = addTag(tagMap, it.node.id, t);
-          ctx.setTagMap(tagMap);
-          await ctx.saveTags();
-        }
+      if (items.length === 0) { body.append(el('p', { className: 'hb-empty', textContent: 'No tag suggestions.' })); return; }
+
+      // One row per bookmark; each suggested tag is a toggle chip (on by default),
+      // plus an input to add your own. Only chosen chips get saved.
+      const state = [];
+      for (const it of items) {
+        const chosen = new Set(it.tags);
+        const row = el('div', { className: 'hb-tagrow' });
+        row.append(el('span', { className: 'hb-title', textContent: it.node.title || it.node.url }));
+        const chips = el('span', { className: 'hb-tagchips' });
+        const makeChip = t => {
+          const chip = el('button', { className: 'hb-tagchip on', textContent: t });
+          chip.addEventListener('click', () => {
+            if (chosen.has(t)) { chosen.delete(t); chip.classList.remove('on'); }
+            else { chosen.add(t); chip.classList.add('on'); }
+          });
+          return chip;
+        };
+        for (const t of it.tags) chips.append(makeChip(t));
+        const input = el('input', { className: 'tag-input', type: 'text', placeholder: '+ tag' });
+        input.addEventListener('keydown', e => {
+          if (e.key !== 'Enter' || !input.value.trim()) return;
+          const t = input.value.trim();
+          if (!chosen.has(t)) { chosen.add(t); chips.insertBefore(makeChip(t), input); }
+          input.value = '';
+        });
+        chips.append(input);
+        row.append(chips);
+        body.append(row);
+        state.push({ id: it.node.id, chosen });
+      }
+      const footer = el('div', { className: 'hb-actions' });
+      const apply = el('button', { className: 'hb-apply', textContent: 'Apply chosen tags' });
+      apply.addEventListener('click', async () => {
+        apply.disabled = true;
+        let map = ctx.getTagMap();
+        for (const s of state) for (const t of s.chosen) map = addTag(map, s.id, t);
+        ctx.setTagMap(map);
+        await ctx.saveTags();
+        rerun();
       });
+      footer.append(el('span', { className: 'hb-status', textContent: `${items.length} bookmark(s) with suggestions` }), apply);
+      body.append(footer);
       return;
     }
 
