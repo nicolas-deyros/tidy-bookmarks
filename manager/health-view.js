@@ -431,7 +431,7 @@ async function openAi(card, { container, ctx, scopeId, rerun }) {
     if (card.id === 'similar') {
       const byTitle = new Map();
       for (const f of folders) if (!byTitle.has(f.title)) byTitle.set(f.title, f);
-      const titles = [...byTitle.keys()];
+      const titles = [...byTitle.keys()].slice(0, 50); // cap for model context
       setStatus(`Comparing ${titles.length} folder names…`);
       const groups = await suggestSimilarFolders(titles, opts);
       const items = groups
@@ -454,7 +454,10 @@ async function openAi(card, { container, ctx, scopeId, rerun }) {
       return;
     }
   } catch (err) {
-    body.replaceChildren(el('p', { className: 'hb-empty', textContent: `Scan failed: ${err.message}` }));
+    const msg = err.message?.includes('timed out')
+      ? "The AI model took too long. Try again with a smaller folder, or use the Cleanup checks which don't need AI."
+      : `Scan failed: ${err.message}`;
+    body.replaceChildren(el('p', { className: 'hb-empty', textContent: msg }));
   } finally {
     try { baseSession?.destroy?.(); } catch { /* ignore */ }
   }

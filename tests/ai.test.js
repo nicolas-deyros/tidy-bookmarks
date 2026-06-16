@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { buildPrompt, sanitizeFolderName, parseSuggestion, suggestFolder } from '../src/ai.js';
+import { withTimeout, buildPrompt, sanitizeFolderName, parseSuggestion, suggestFolder } from '../src/ai.js';
+
+describe('withTimeout', () => {
+  it('resolves when promise completes in time', async () => {
+    const result = await withTimeout(Promise.resolve('ok'), 1000, 'fallback');
+    expect(result).toBe('ok');
+  });
+  it('returns fallback when promise exceeds deadline', async () => {
+    const slow = new Promise(res => setTimeout(() => res('late'), 5000));
+    const result = await withTimeout(slow, 10, 'fallback');
+    expect(result).toBe('fallback');
+  });
+});
 
 const folders = [{ id: 'f1', title: 'Dev' }, { id: 'f2', title: 'Recipes' }];
 
@@ -159,6 +171,14 @@ describe('suggestReorg', () => {
   });
   it('returns [] when no session factory is available', async () => {
     expect(await suggestReorg('Misc', reorgBookmarks, { createSession: null })).toEqual([]);
+  });
+  it('caps the prompt at 50 bookmarks regardless of input size', async () => {
+    const big = Array.from({ length: 80 }, (_, i) => ({ id: `b${i}`, title: `T${i}`, url: `https://x.com/${i}` }));
+    let capturedPrompt = '';
+    const session = { prompt: async p => { capturedPrompt = p; return ''; }, destroy() {} };
+    await suggestReorg('Folder', big, { createSession: async () => session });
+    const lines = capturedPrompt.split('\n').filter(l => /^\d+\./.test(l));
+    expect(lines.length).toBe(50);
   });
 });
 

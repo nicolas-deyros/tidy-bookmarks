@@ -6,7 +6,7 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: { chrome: 'readonly', LanguageModel: 'readonly', document: 'readonly', window: 'readonly', URL: 'readonly', URLSearchParams: 'readonly', console: 'readonly' }
+      globals: { chrome: 'readonly', LanguageModel: 'readonly', document: 'readonly', window: 'readonly', URL: 'readonly', URLSearchParams: 'readonly', console: 'readonly', setTimeout: 'readonly', Promise: 'readonly' }
     },
     rules: {
       'no-eval': 'error',
