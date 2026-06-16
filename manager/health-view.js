@@ -273,11 +273,25 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
 }
 
 async function openAi(card, { container, ctx, scopeId, rerun }) {
-  const ok = await ctx.confirm(
-    'Start AI scan?',
-    'This loads the on-device AI model (Gemini Nano). On first use it may download several hundred MB, which can temporarily slow down your browser and other tabs. Continue?'
-  );
-  if (!ok) return;
+  // Only warn when the model isn't cached yet — Chrome stores it after first download.
+  let needsDownload = false;
+  if (typeof LanguageModel !== 'undefined') {
+    try {
+      const avail = await LanguageModel.availability({
+        expectedInputs: [{ type: 'text', languages: ['en'] }],
+        expectedOutputs: [{ type: 'text', languages: ['en'] }]
+      });
+      needsDownload = avail !== 'readily';
+    } catch { /* availability check failed — proceed without warning */ }
+  }
+  if (needsDownload) {
+    const ok = await ctx.confirm(
+      'Download AI model?',
+      'This scan uses on-device AI (Gemini Nano). The model needs to download once (~several hundred MB) and will be cached by Chrome for future scans. This may temporarily slow your browser. Continue?',
+      { confirmText: 'Download & scan', danger: false }
+    );
+    if (!ok) return;
+  }
 
   const body = drill(container, card.title, rerun, AI_SUBTITLES[card.id]);
   const status = el('span', { className: 'hb-status' });
