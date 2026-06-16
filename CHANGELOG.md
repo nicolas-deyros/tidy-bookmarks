@@ -4,8 +4,18 @@ All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https:
 
 ## [0.6.1] — 2026-06-16
 
+### Fixed
+- **Popup search results now appear.** `height: 100vh` on the shared popup/sidepanel body was collapsing the results list to zero height in the action popup (which auto-sizes to content). Fixed by scoping `height: 100vh` to the sidepanel context only and giving the popup a `max-height` cap on its results list.
+- **Popup spacing** increased (body padding, item row padding, base font size) for a more comfortable layout.
+- **AI scans no longer hang indefinitely.** Every `session.prompt()` call now has a 30-second timeout; `LanguageModel.create()` has a 20-second timeout. A clear, actionable message is shown if the model times out.
+- **Tidy a folder** with very large folders (e.g. 200+ bookmarks) no longer overflows Gemini Nano's context window — prompt input is capped at 50 bookmarks.
+- **Similar-topic folders** prompt capped at 50 folder titles for the same reason.
+- **Reorganize** toolbar button and **New folder** rail button now match the shared CTA design (`.hb-btn` class and solid-border secondary style respectively); previously both were unstyled or used a dashed ghost that diverged from every other button.
+- **Confirm modal** no longer hard-codes "Delete" as the confirm label — it now accepts `{ confirmText, danger }` so non-destructive confirms show the right action word and colour.
+
 ### Changed
 - **Faster AI scans:** a Health scan now creates the on-device model **once** and reuses it across items via cheap `clone()`s (fresh context per item), instead of creating and destroying a separate session per bookmark. The expensive model init happens a single time per scan.
+- **AI model download warning** is shown once, the first time a user triggers an AI scan that requires a download. Chrome caches the model after first use, so the warning is skipped on all subsequent scans. If the model is already cached (`availability === 'readily'`), no warning is shown at all.
 
 ## [0.6.0] — 2026-06-15
 
