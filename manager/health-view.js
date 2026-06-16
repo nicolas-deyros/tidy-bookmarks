@@ -273,24 +273,28 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
 }
 
 async function openAi(card, { container, ctx, scopeId, rerun }) {
-  // Only warn when the model isn't cached yet — Chrome stores it after first download.
-  let needsDownload = false;
-  if (typeof LanguageModel !== 'undefined') {
-    try {
-      const avail = await LanguageModel.availability({
-        expectedInputs: [{ type: 'text', languages: ['en'] }],
-        expectedOutputs: [{ type: 'text', languages: ['en'] }]
-      });
-      needsDownload = avail !== 'readily';
-    } catch { /* availability check failed — proceed without warning */ }
-  }
-  if (needsDownload) {
-    const ok = await ctx.confirm(
-      'Download AI model?',
-      'This scan uses on-device AI (Gemini Nano). The model needs to download once (~several hundred MB) and will be cached by Chrome for future scans. This may temporarily slow your browser. Continue?',
-      { confirmText: 'Download & scan', danger: false }
-    );
-    if (!ok) return;
+  // Only warn once — if the user has already accepted, or the model is cached, skip.
+  const { aiScanWarningAccepted } = await chrome.storage.local.get('aiScanWarningAccepted');
+  if (!aiScanWarningAccepted) {
+    let needsDownload = false;
+    if (typeof LanguageModel !== 'undefined') {
+      try {
+        const avail = await LanguageModel.availability({
+          expectedInputs: [{ type: 'text', languages: ['en'] }],
+          expectedOutputs: [{ type: 'text', languages: ['en'] }]
+        });
+        needsDownload = avail !== 'readily';
+      } catch { /* proceed without warning */ }
+    }
+    if (needsDownload) {
+      const ok = await ctx.confirm(
+        'Download AI model?',
+        'This scan uses on-device AI (Gemini Nano). The model needs to download once (~several hundred MB) and will be cached by Chrome for future scans. This may temporarily slow your browser. Continue?',
+        { confirmText: 'Download & scan', danger: false }
+      );
+      if (!ok) return;
+    }
+    await chrome.storage.local.set({ aiScanWarningAccepted: true });
   }
 
   const body = drill(container, card.title, rerun, AI_SUBTITLES[card.id]);
