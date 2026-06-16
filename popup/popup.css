@@ -1,12 +1,15 @@
-body { height: 100vh; box-sizing: border-box; margin: 0; padding: 10px; display: flex; flex-direction: column; font: 13px system-ui, sans-serif; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
-/* The action popup has no intrinsic width (it sizes to content), so pin it.
-   The side panel has a real width, so let the body fill it. */
+body { box-sizing: border-box; margin: 0; padding: 14px; display: flex; flex-direction: column; font: 14px system-ui, sans-serif; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+/* Popup auto-sizes to content height — pin width only, no height: 100vh (would collapse results).
+   Sidepanel has a real viewport — fill it. */
 :root[data-context="popup"] body { width: 360px; }
-:root[data-context="sidepanel"] body { width: 100%; }
+:root[data-context="sidepanel"] body { width: 100%; height: 100vh; }
 #search { width: 100%; box-sizing: border-box; padding: 7px 10px; margin-bottom: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); }
 #status { display: flex; gap: 8px; margin-bottom: 8px; }
-#results { list-style: none; margin: 0 0 8px; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-#results li { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+/* Popup: results grow to a cap then scroll. Sidepanel: results fill remaining height. */
+#results { list-style: none; margin: 0 0 8px; padding: 0; overflow-y: auto; }
+:root[data-context="popup"] #results { max-height: 420px; }
+:root[data-context="sidepanel"] #results { flex: 1 1 auto; min-height: 0; }
+#results li { padding: 10px 6px; border-bottom: 1px solid var(--border); }
 #results a { color: var(--link); text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; }
 #results a:focus, #results a:focus-visible { background: var(--bg-sel); outline: 2px solid var(--accent); outline-offset: -2px; }
 #results .path { color: var(--text-soft); font-size: 11px; }

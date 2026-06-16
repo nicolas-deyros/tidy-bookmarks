@@ -70,6 +70,7 @@ export function renderContents(container, ctx) {
   toolbar.appendChild(sortSel);
 
   const reorgBtn = document.createElement('button');
+  reorgBtn.className = 'hb-btn';
   reorgBtn.textContent = 'Reorganize';
   reorgBtn.addEventListener('click', () => openReorg(folder, ctx));
   toolbar.appendChild(reorgBtn);

@@ -3,6 +3,11 @@ import { suggestFolderByRules } from './suggestions.js';
 import { sanitizeTag } from './tags.js';
 import { parseMethodologyPlan } from './reorg.js';
 
+// ponytail: no retry — callers get the fallback and move on.
+export function withTimeout(promise, ms, fallback) {
+  return Promise.race([promise, new Promise(res => setTimeout(() => res(fallback), ms))]);
+}
+
 export function buildPrompt(bookmark, folders) {
   const names = folders.map(f => f.title).join(', ');
   return [
@@ -70,7 +75,7 @@ export async function defaultSessionFactory({ onDownloadProgress } = {}) {
   if (onDownloadProgress) {
     createOptions.monitor = m => m.addEventListener('downloadprogress', e => onDownloadProgress(e));
   }
-  return LanguageModel.create(createOptions);
+  return withTimeout(LanguageModel.create(createOptions), 20_000, null);
 }
 
 export async function suggestFolder(bookmark, folders, { createSession } = {}) {
@@ -79,7 +84,7 @@ export async function suggestFolder(bookmark, folders, { createSession } = {}) {
     try {
       session = await createSession();
       if (session) {
-        const response = await session.prompt(buildPrompt(bookmark, folders));
+        const response = await withTimeout(session.prompt(buildPrompt(bookmark, folders)), 30_000, null);
         const parsed = parseSuggestion(response, folders);
         if (parsed) return { ...parsed, source: 'ai' };
       }
@@ -120,7 +125,7 @@ export async function suggestTags(bookmark, existingTags, { createSession } = {}
   try {
     session = await createSession();
     if (session) {
-      const response = await session.prompt(buildTagPrompt(bookmark, existingTags));
+      const response = await withTimeout(session.prompt(buildTagPrompt(bookmark, existingTags)), 30_000, null);
       return parseTags(response);
     }
   } catch (err) {
@@ -165,12 +170,13 @@ export function parseReorg(response, bookmarks) {
 
 export async function suggestReorg(folderTitle, bookmarks, { createSession } = {}) {
   if (!createSession) return [];
+  const capped = bookmarks.slice(0, 50); // ponytail: model context limit — cap before both prompt and parse
   let session = null;
   try {
     session = await createSession();
     if (session) {
-      const response = await session.prompt(buildReorgPrompt(folderTitle, bookmarks));
-      return parseReorg(response, bookmarks);
+      const response = await withTimeout(session.prompt(buildReorgPrompt(folderTitle, capped)), 30_000, null);
+      return parseReorg(response, capped);
     }
   } catch (err) {
     console.warn('AI reorg suggestion failed:', err);
@@ -211,7 +217,7 @@ export async function suggestSimilarFolders(folderTitles, { createSession } = {}
   try {
     session = await createSession();
     if (session) {
-      const response = await session.prompt(buildSimilarFoldersPrompt(folderTitles));
+      const response = await withTimeout(session.prompt(buildSimilarFoldersPrompt(folderTitles)), 30_000, null);
       return parseSimilarFolders(response, folderTitles);
     }
   } catch (err) {
@@ -245,7 +251,7 @@ export async function suggestMethodologyPlan(methodology, folderTitle, bookmarks
   try {
     session = await createSession();
     if (session) {
-      const response = await session.prompt(buildMethodologyPrompt(methodology, folderTitle, bookmarks));
+      const response = await withTimeout(session.prompt(buildMethodologyPrompt(methodology, folderTitle, bookmarks)), 30_000, null);
       return parseMethodologyPlan(response, bookmarks);
     }
   } catch (err) {

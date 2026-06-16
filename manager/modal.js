@@ -1,4 +1,4 @@
-export function confirmModal(title, body) {
+export function confirmModal(title, body, { confirmText = 'Delete', danger = true } = {}) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -13,8 +13,8 @@ export function confirmModal(title, body) {
     const cancel = document.createElement('button');
     cancel.textContent = 'Cancel';
     const confirm = document.createElement('button');
-    confirm.textContent = 'Delete';
-    confirm.className = 'danger';
+    confirm.textContent = confirmText;
+    if (danger) confirm.className = 'danger';
 
     function onKey(e) { if (e.key === 'Escape') close(false); }
     function close(result) {
