@@ -273,6 +273,12 @@ async function openCleanup(card, { container, ctx, scopeId, rerun }) {
 }
 
 async function openAi(card, { container, ctx, scopeId, rerun }) {
+  const ok = await ctx.confirm(
+    'Start AI scan?',
+    'This loads the on-device AI model (Gemini Nano). On first use it may download several hundred MB, which can temporarily slow down your browser and other tabs. Continue?'
+  );
+  if (!ok) return;
+
   const body = drill(container, card.title, rerun, AI_SUBTITLES[card.id]);
   const status = el('span', { className: 'hb-status' });
   status.setAttribute('aria-live', 'polite');
