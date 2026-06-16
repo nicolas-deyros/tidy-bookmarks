@@ -282,30 +282,36 @@ async function openAi(card, { container, ctx, scopeId, rerun }) {
   const setStatus = t => { status.textContent = t; };
   setStatus('Preparing on-device model… first run may download it.');
 
+  let baseSession = null;
   try {
     const tree = await chrome.bookmarks.getTree();
     const scope = scopeId ? [findNode(tree, scopeId)].filter(Boolean) : tree;
     const flat = flattenBookmarks(scope);
     const rootIds = new Set((tree[0]?.children ?? []).map(n => n.id));
     const folders = listFolders(tree).filter(f => !rootIds.has(f.id));
-    const opts = { createSession: defaultSessionFactory };
 
-    // Probe the on-device model once so we can show a clear message, and surface
-    // the (possibly large) first-run download as a percentage.
-    let probe = null;
+    // Create ONE on-device session for the whole scan (model init is the expensive
+    // part) and surface the first-run download as a percentage.
     try {
-      probe = await defaultSessionFactory({
+      baseSession = await defaultSessionFactory({
         onDownloadProgress: e => setStatus(`Downloading on-device model… ${Math.round((e.loaded ?? 0) * 100)}%`)
       });
-    } catch { probe = null; }
-    const aiReady = !!probe;
-    try { probe?.destroy?.(); } catch { /* ignore */ }
+    } catch { baseSession = null; }
+    const aiReady = !!baseSession;
 
     // Tags / tidy / similar have no rule-based fallback — they need the model.
     if (!aiReady && card.id !== 'fileLoose') {
       body.replaceChildren(aiUnavailableNote());
       return;
     }
+
+    // Per item, hand the AI helpers a fresh-context clone() of the base session
+    // (cheap) so prompts don't accumulate context, or reuse the base if clone()
+    // isn't available (no destroy(), so it survives the loop). Base dies in finally.
+    const opts = {
+      createSession: async () => !baseSession ? null
+        : (baseSession.clone ? baseSession.clone() : { prompt: (...a) => baseSession.prompt(...a) })
+    };
 
     if (card.id === 'fileLoose') {
       const loose = flat.filter(b => rootIds.has(b.parentId)).slice(0, 25);
@@ -449,6 +455,8 @@ async function openAi(card, { container, ctx, scopeId, rerun }) {
     }
   } catch (err) {
     body.replaceChildren(el('p', { className: 'hb-empty', textContent: `Scan failed: ${err.message}` }));
+  } finally {
+    try { baseSession?.destroy?.(); } catch { /* ignore */ }
   }
 }
 

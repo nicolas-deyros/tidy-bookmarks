@@ -2,6 +2,11 @@
 
 All notable changes to Tidy Bookmarks. Format based on [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning. Everything runs on-device — no network, no tracking.
 
+## [0.6.1] — 2026-06-16
+
+### Changed
+- **Faster AI scans:** a Health scan now creates the on-device model **once** and reuses it across items via cheap `clone()`s (fresh context per item), instead of creating and destroying a separate session per bookmark. The expensive model init happens a single time per scan.
+
 ## [0.6.0] — 2026-06-15
 
 ### Added
